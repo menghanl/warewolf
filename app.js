@@ -412,9 +412,10 @@ document.addEventListener('DOMContentLoaded', () => {
         confirmButton.textContent = buttonText;
         confirmButton.onclick = () => {
             if (selectedPlayerId) {
-                onConfirm(selectedPlayerId);
+                const confirmedId = selectedPlayerId;
                 clearPlayerSelection();
                 clearActionControls();
+                onConfirm(confirmedId);
             } else {
                 alert('请选择一个玩家。');
             }
