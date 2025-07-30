@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>狼人杀助手</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- 游戏设置 -->
+        <div id="game-setup">
+            <h1>狼人杀助手</h1>
+            <div class="setup-section">
+                <label for="player-count">玩家人数:</label>
+                <input type="number" id="player-count" min="6" max="12" value="8">
+            </div>
+            <div class="setup-section">
+                <h3>选择角色:</h3>
+                <div id="role-selection">
+                    <!-- 角色将由JS动态生成 -->
+                </div>
+            </div>
+            <button id="start-game">开始游戏</button>
+        </div>
+
+        <!-- 游戏主界面 -->
+        <div id="game-board" class="hidden">
+            <h2 id="game-phase-title">游戏进行中</h2>
+            <div id="player-list">
+                <!-- 玩家卡片将由JS动态生成 -->
+            </div>
+            <div id="action-controls">
+                <!-- 行动按钮将由JS动态生成 -->
+            </div>
+            <div id="event-log">
+                <h3>游戏日志</h3>
+                <ul id="log-list">
+                    <!-- 日志条目将由JS动态生成 -->
+                </ul>
+            </div>
+            <button id="reset-game">重置游戏</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
