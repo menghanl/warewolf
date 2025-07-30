@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderRoleSelection() {
         roleSelectionContainer.innerHTML = '';
         // 简单的预设，可以根据玩家人数调整
-        const playerCount = parseInt(playerCountInput.value) || 8;
+        const playerCount = parseInt(playerCountInput.value) || 12;
         const roles = getPresetRoles(playerCount);
 
         const roleCounts = roles.reduce((acc, role) => {
@@ -46,9 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getPresetRoles(playerCount) {
         // 这可以是一个更复杂的配置表
+        if (playerCount === 12) return ['狼人', '狼人', '狼人', '狼人', '预言家', '女巫', '猎人', '白痴', '平民', '平民', '平民', '平民'];
         if (playerCount === 6) return ['预言家', '女巫', '猎人', '狼人', '狼人', '平民'];
         if (playerCount === 7) return ['预言家', '女巫', '猎人', '狼人', '狼人', '平民', '平民'];
-        if (playerCount >= 8) {
+        if (playerCount >= 8 && playerCount < 12) {
             const roles = ['预言家', '女巫', '猎人', '白痴', '狼人', '狼人', '狼人'];
             while (roles.length < playerCount) {
                 roles.push('平民');
@@ -103,19 +104,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 处理白天阶段
     function handleDayPhase() {
-        // 在第一天或警长空缺时处理警长竞选
-        if (!gameState.players.some(p => p.isSheriff)) {
-            handleSheriffElection(() => {
-                log('警长竞选结束，现在请玩家发言并准备投票。');
-                setupPlayerSelection(player => player.isAlive && !player.isRevealedIdiot, (selectedId) => {
-                    handleVote(selectedId);
-                }, '投票淘汰该玩家');
-            });
-        } else {
-            log('进入白天阶段，请玩家发言并准备投票。');
+        log('天亮了，请睁眼。');
+
+        const afterDeathProcessing = () => {
+            if (checkForWinner()) return;
+            log('请玩家发言并准备投票。');
             setupPlayerSelection(player => player.isAlive && !player.isRevealedIdiot, (selectedId) => {
                 handleVote(selectedId);
             }, '投票淘汰该玩家');
+        };
+
+        // 在第一天或警长空缺时处理警长竞选
+        if (!gameState.players.some(p => p.isSheriff)) {
+            handleSheriffElection(() => {
+                processPendingDeaths(afterDeathProcessing);
+            });
+        } else {
+            processPendingDeaths(afterDeathProcessing);
         }
     }
 
@@ -161,80 +166,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 处理夜晚阶段
     function handleNightPhase() {
-        gameState.victim = null; // 每个夜晚开始时重置
-        gameState.poisonedTarget = null; // 每个夜晚开始时重置
+        gameState.victim = null;
+        gameState.poisonedTarget = null;
+        gameState.pendingDeaths = [];
 
-        // 顺序：狼人 -> 预言家 -> 女巫
-        const wolves = gameState.players.filter(p => p.role === '狼人' && p.isAlive);
-        const prophet = gameState.players.find(p => p.role === '预言家' && p.isAlive);
-        const witch = gameState.players.find(p => p.role === '女巫' && p.isAlive);
-
-        // 简单的队列来处理行动顺序
+        // ... (night actions setup) ...
         const nightActions = [];
         if (wolves.length > 0) nightActions.push(handleWolvesAction);
         if (prophet) nightActions.push(handleProphetAction);
         if (witch) nightActions.push(handleWitchAction);
 
-        // 添加一个结束夜晚的动作
-        nightActions.push((callback) => {
-            log('黑夜结束，天亮了。');
-            let deathAnnouncements = [];
-            let hunterDied = false;
 
-            // 优先处理毒药，如果狼人和女巫目标相同，视为被毒杀
+        nightActions.push((callback) => {
+            log('黑夜结束。');
+
             if (gameState.poisonedTarget && gameState.poisonedTarget === gameState.victim) {
-                gameState.victim = null; 
+                gameState.victim = null;
             }
 
             if (gameState.poisonedTarget) {
-                const poisonedPlayer = gameState.players.find(p => p.id === gameState.poisonedTarget);
-                if (poisonedPlayer) {
-                    poisonedPlayer.isAlive = false;
-                    deathAnnouncements.push(`${poisonedPlayer.id} 号玩家被毒杀了`);
-                    if (poisonedPlayer.role === '猎人') hunterDied = true;
-                }
+                gameState.pendingDeaths.push({ id: gameState.poisonedTarget, reason: '被毒杀' });
             }
-
             if (gameState.victim) {
-                const victimPlayer = gameState.players.find(p => p.id === gameState.victim);
-                if (victimPlayer) {
-                    victimPlayer.isAlive = false;
-                    deathAnnouncements.push(`${victimPlayer.id} 号玩家被狼人淘汰了`);
-                    if (victimPlayer.role === '猎人' && !hunterDied) hunterDied = true;
+                gameState.pendingDeaths.push({ id: gameState.victim, reason: '被狼人淘汰' });
+            }
+
+            gameState.phase = 'day';
+            runGameLoop();
+            callback();
+        });
+
+        // ... (night actions execution) ...
+    }
+
+    function processPendingDeaths(callback) {
+        const deathAnnouncements = [];
+        let hunterDied = false;
+
+        gameState.pendingDeaths.forEach(death => {
+            const player = gameState.players.find(p => p.id === death.id);
+            if (player && player.isAlive) {
+                player.isAlive = false;
+                deathAnnouncements.push(`${player.id} 号玩家昨晚因 ${death.reason} 而出局`);
+                if (player.role === '猎人') {
+                    hunterDied = true;
                 }
-            }
-
-            if (deathAnnouncements.length === 0) {
-                log('昨晚是平安夜。');
-            } else {
-                log(deathAnnouncements.join('，') + '。');
-            }
-
-            renderPlayers(gameState.players);
-            if (checkForWinner()) return;
-
-            if (hunterDied) {
-                handleHunterSkill(() => {
-                    if (checkForWinner()) return;
-                    gameState.phase = 'day';
-                    runGameLoop();
-                    callback();
-                });
-            } else {
-                gameState.phase = 'day';
-                runGameLoop();
-                callback();
             }
         });
 
-        // 执行行动队列
-        let currentActionIndex = 0;
-        function nextAction() {
-            if (currentActionIndex < nightActions.length) {
-                nightActions[currentActionIndex++](nextAction);
-            }
+        if (deathAnnouncements.length === 0) {
+            log('昨晚是平安夜。');
+        } else {
+            log(deathAnnouncements.join('，') + '。');
         }
-        nextAction();
+
+        renderPlayers(gameState.players);
+
+        if (hunterDied) {
+            handleHunterSkill(() => {
+                if (checkForWinner()) return;
+                callback();
+            });
+        } else {
+            callback();
+        }
     }
 
     function handleWolvesAction(callback) {
@@ -452,15 +447,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const aliveGoodPlayers = alivePlayers.filter(p => p.role !== '狼人' || p.isRevealedIdiot);
 
         let winner = null;
+        let reason = '';
+
         if (aliveWolves.length === 0) {
             winner = '好人阵营';
+            reason = '所有狼人已被淘汰';
         } else if (aliveWolves.length >= aliveGoodPlayers.length) {
             winner = '狼人阵营';
+            reason = '狼人数量已达到或超过好人数量';
         }
 
         if (winner) {
+            const victoryMessage = `游戏结束，${reason}，${winner}胜利！`;
             gamePhaseTitle.textContent = `${winner}胜利！`;
-            log(`游戏结束，${winner}胜利！`);
+            log(victoryMessage);
+            showModal(victoryMessage);
             clearActionControls();
             // 禁用所有未来的操作
             gameState.phase = 'gameover';
@@ -493,6 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
             witchUsedPoison: false,
             victim: null,
             poisonedTarget: null,
+            pendingDeaths: [],
         };
     }
 
