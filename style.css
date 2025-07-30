@@ -20,7 +20,7 @@ body {
 }
 
 .hidden {
-    display: none;
+    display: none !important;
 }
 
 /* 游戏设置 */
