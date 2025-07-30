@@ -8,8 +8,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const gamePhaseTitle = document.getElementById('game-phase-title');
     const logList = document.getElementById('log-list');
     const resetGameButton = document.getElementById('reset-game');
+    const modal = document.getElementById('modal');
+    const modalText = document.getElementById('modal-text');
+    const modalClose = document.getElementById('modal-close');
 
     const availableRoles = ['平民', '预言家', '女巫', '猎人', '白痴', '狼人'];
+
+    // 显示模态框
+    function showModal(text, callback) {
+        modalText.textContent = text;
+        modal.classList.remove('hidden');
+        modalClose.onclick = () => {
+            modal.classList.add('hidden');
+            if (callback) callback();
+        };
+    }
 
     // 动态生成角色选择
     function renderRoleSelection() {
@@ -90,8 +103,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 处理白天阶段
     function handleDayPhase() {
-        // 在第一天处理警长竞选
-        if (gameState.day === 1 && !gameState.players.some(p => p.isSheriff)) {
+        // 在第一天或警长空缺时处理警长竞选
+        if (!gameState.players.some(p => p.isSheriff)) {
             handleSheriffElection(() => {
                 log('警长竞选结束，现在请玩家发言并准备投票。');
                 setupPlayerSelection(player => player.isAlive && !player.isRevealedIdiot, (selectedId) => {
@@ -115,6 +128,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (player.role === '白痴') {
                 player.isRevealedIdiot = true;
                 log('白痴翻牌，保留在场上但失去投票权。');
+                if (player.isSheriff) {
+                    player.isSheriff = false;
+                    log('白痴警长被投票出局，警徽被撕毁，请在下一个白天重新竞选警长。');
+                }
                 renderPlayers(gameState.players);
                 if (checkForWinner()) return;
                 startNextNight();
@@ -164,21 +181,26 @@ document.addEventListener('DOMContentLoaded', () => {
             let deathAnnouncements = [];
             let hunterDied = false;
 
-            if (gameState.victim) {
-                const victimPlayer = gameState.players.find(p => p.id === gameState.victim);
-                if (victimPlayer) {
-                    victimPlayer.isAlive = false;
-                    deathAnnouncements.push(`${victimPlayer.id} 号玩家昨晚被淘汰了`);
-                    if (victimPlayer.role === '猎人') hunterDied = true;
-                }
+            // 优先处理毒药，如果狼人和女巫目标相同，视为被毒杀
+            if (gameState.poisonedTarget && gameState.poisonedTarget === gameState.victim) {
+                gameState.victim = null; 
             }
 
             if (gameState.poisonedTarget) {
                 const poisonedPlayer = gameState.players.find(p => p.id === gameState.poisonedTarget);
                 if (poisonedPlayer) {
                     poisonedPlayer.isAlive = false;
-                    deathAnnouncements.push(`${poisonedPlayer.id} 号玩家昨晚被淘汰了`);
+                    deathAnnouncements.push(`${poisonedPlayer.id} 号玩家被毒杀了`);
                     if (poisonedPlayer.role === '猎人') hunterDied = true;
+                }
+            }
+
+            if (gameState.victim) {
+                const victimPlayer = gameState.players.find(p => p.id === gameState.victim);
+                if (victimPlayer) {
+                    victimPlayer.isAlive = false;
+                    deathAnnouncements.push(`${victimPlayer.id} 号玩家被狼人淘汰了`);
+                    if (victimPlayer.role === '猎人' && !hunterDied) hunterDied = true;
                 }
             }
 
@@ -229,9 +251,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setupPlayerSelection(player => player.isAlive, (selectedId) => {
             const targetPlayer = gameState.players.find(p => p.id === selectedId);
             const isWolf = targetPlayer.role === '狼人';
-            alert(`查验结果：${selectedId} 号玩家是 ${isWolf ? '狼人' : '好人'}。`);
-            log(`预言家查验了 ${selectedId} 号玩家。`);
-            callback();
+            showModal(`查验结果：${selectedId} 号玩家是 ${isWolf ? '狼人' : '好人'}。`, () => {
+                log(`预言家查验了 ${selectedId} 号玩家。`);
+                callback();
+            });
         });
     }
 

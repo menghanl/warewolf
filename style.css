@@ -155,3 +155,35 @@ button:hover {
 #reset-game:hover {
     background-color: #c91f1f;
 }
+
+/* 模态框 */
+#modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+#modal-content {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+#modal-text {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+}
+
+#modal-close {
+    width: auto;
+    padding: 10px 30px;
+}
