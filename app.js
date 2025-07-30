@@ -151,6 +151,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (checkForWinner()) return;
                     startNextNight();
                 });
+            } else if (player.isSheriff) {
+                handleSheriffTransfer(() => {
+                    if (checkForWinner()) return;
+                    startNextNight();
+                });
             } else {
                 if (checkForWinner()) return;
                 startNextNight();
@@ -170,7 +175,11 @@ document.addEventListener('DOMContentLoaded', () => {
         gameState.poisonedTarget = null;
         gameState.pendingDeaths = [];
 
-        // ... (night actions setup) ...
+        const wolves = gameState.players.filter(p => p.role === '狼人' && p.isAlive);
+        const prophet = gameState.players.find(p => p.role === '预言家' && p.isAlive);
+        const witch = gameState.players.find(p => p.role === '女巫' && p.isAlive);
+
+        // 简单的队列来处理行动顺序
         const nightActions = [];
         if (wolves.length > 0) nightActions.push(handleWolvesAction);
         if (prophet) nightActions.push(handleProphetAction);
@@ -197,20 +206,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // ... (night actions execution) ...
+        let currentActionIndex = 0;
+        function nextAction() {
+            if (currentActionIndex < nightActions.length) {
+                nightActions[currentActionIndex++](nextAction);
+            }
+        }
+        nextAction();
     }
 
     function processPendingDeaths(callback) {
         const deathAnnouncements = [];
         let hunterDied = false;
+        let sheriffDied = false;
 
         gameState.pendingDeaths.forEach(death => {
             const player = gameState.players.find(p => p.id === death.id);
             if (player && player.isAlive) {
                 player.isAlive = false;
                 deathAnnouncements.push(`${player.id} 号玩家昨晚因 ${death.reason} 而出局`);
-                if (player.role === '猎人') {
-                    hunterDied = true;
-                }
+                if (player.role === '猎人') hunterDied = true;
+                if (player.isSheriff) sheriffDied = true;
             }
         });
 
@@ -222,13 +238,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderPlayers(gameState.players);
 
-        if (hunterDied) {
-            handleHunterSkill(() => {
-                if (checkForWinner()) return;
+        const continueAfterDeaths = () => {
+            if (hunterDied) {
+                handleHunterSkill(() => {
+                    if (checkForWinner()) return;
+                    callback();
+                });
+            } else {
                 callback();
-            });
+            }
+        };
+
+        if (sheriffDied) {
+            handleSheriffTransfer(continueAfterDeaths);
         } else {
-            callback();
+            continueAfterDeaths();
         }
     }
 
@@ -309,6 +333,34 @@ document.addEventListener('DOMContentLoaded', () => {
         doSave(); // 开始女巫的逻辑流程
     }
 
+    function handleSheriffTransfer(callback) {
+        log('警长已死亡。请主持人选择一名玩家移交警徽，然后点击“确认移交”；或者点击“撕毁警徽”。');
+        clearActionControls();
+
+        setupPlayerSelection(p => p.isAlive, (newSheriffId) => {
+            const oldSheriff = gameState.players.find(p => p.isSheriff);
+            if (oldSheriff) oldSheriff.isSheriff = false;
+
+            const newSheriff = gameState.players.find(p => p.id === newSheriffId);
+            newSheriff.isSheriff = true;
+            log(`警徽已移交给 ${newSheriffId} 号玩家。`);
+            renderPlayers(gameState.players);
+            callback();
+        }, '确认移交');
+
+        const tearUpButton = document.createElement('button');
+        tearUpButton.textContent = '撕毁警徽';
+        tearUpButton.onclick = () => {
+            const oldSheriff = gameState.players.find(p => p.isSheriff);
+            if (oldSheriff) oldSheriff.isSheriff = false;
+            log('警徽已被撕毁。');
+            renderPlayers(gameState.players);
+            clearActionControls();
+            callback();
+        };
+        actionControls.appendChild(tearUpButton);
+    }
+
     function handleSheriffElection(callback) {
         log('请进行警长竞选。请选择所有参与竞选的玩家。');
         let candidates = [];
@@ -346,6 +398,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function voteForSheriff(candidates, callback) {
         let votes = {};
+        // 确保候选人按ID顺序排序，以便询问票数时顺序一致
+        candidates.sort((a, b) => a - b);
         candidates.forEach(c => votes[c] = 0);
 
         // 简化处理：直接弹出prompt收集票数
@@ -380,8 +434,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 shotPlayer.isAlive = false;
                 log(`猎人开枪带走了 ${shotPlayer.id} 号玩家。`);
                 renderPlayers(gameState.players);
+
+                if (shotPlayer.isSheriff) {
+                    handleSheriffTransfer(callback);
+                } else {
+                    callback();
+                }
+            } else {
+                callback();
             }
-            callback();
         }, '确认开枪');
     }
 
@@ -443,18 +504,30 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkForWinner() {
         const alivePlayers = gameState.players.filter(p => p.isAlive);
         const aliveWolves = alivePlayers.filter(p => p.role === '狼人');
-        // 在判断胜利条件时，翻牌的白痴算作好人阵营的存活玩家
-        const aliveGoodPlayers = alivePlayers.filter(p => p.role !== '狼人' || p.isRevealedIdiot);
+        const aliveGods = alivePlayers.filter(p => ['预言家', '女巫', '猎人', '白痴'].includes(p.role));
+        const aliveVillagers = alivePlayers.filter(p => p.role === '平民');
 
         let winner = null;
         let reason = '';
 
+        // 好人阵营胜利条件：所有狼人出局
         if (aliveWolves.length === 0) {
             winner = '好人阵营';
             reason = '所有狼人已被淘汰';
-        } else if (aliveWolves.length >= aliveGoodPlayers.length) {
+        }
+        // 狼人阵营胜利条件：
+        // 1. 狼人数量达到或超过好人数量
+        // 2. 所有平民出局 (屠边)
+        // 3. 所有神职出局 (屠边)
+        else if (aliveWolves.length >= (aliveGods.length + aliveVillagers.length)) {
             winner = '狼人阵营';
             reason = '狼人数量已达到或超过好人数量';
+        } else if (aliveVillagers.length === 0) {
+            winner = '狼人阵营';
+            reason = '所有平民已被淘汰';
+        } else if (aliveGods.length === 0) {
+            winner = '狼人阵营';
+            reason = '所有神职已被淘汰';
         }
 
         if (winner) {
