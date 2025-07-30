@@ -9,43 +9,55 @@ document.addEventListener('DOMContentLoaded', () => {
     const logList = document.getElementById('log-list');
     const resetGameButton = document.getElementById('reset-game');
 
-    const availableRoles = ['警长', '平民', '预言家', '女巫', '猎人', '白痴', '狼人'];
+    const availableRoles = ['平民', '预言家', '女巫', '猎人', '白痴', '狼人'];
 
     // 动态生成角色选择
     function renderRoleSelection() {
         roleSelectionContainer.innerHTML = '';
-        availableRoles.forEach(role => {
+        // 简单的预设，可以根据玩家人数调整
+        const playerCount = parseInt(playerCountInput.value) || 8;
+        const roles = getPresetRoles(playerCount);
+
+        const roleCounts = roles.reduce((acc, role) => {
+            acc[role] = (acc[role] || 0) + 1;
+            return acc;
+        }, {});
+
+        Object.keys(roleCounts).forEach(role => {
+            const count = roleCounts[role];
             const roleDiv = document.createElement('div');
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = `role-${role}`;
-            checkbox.value = role;
-            checkbox.checked = true; // 默认全选
-
-            const label = document.createElement('label');
-            label.htmlFor = `role-${role}`;
-            label.textContent = role;
-
-            roleDiv.appendChild(checkbox);
-            roleDiv.appendChild(label);
+            roleDiv.innerHTML = `<label>${role} x${count}</label>`;
             roleSelectionContainer.appendChild(roleDiv);
         });
     }
 
+    function getPresetRoles(playerCount) {
+        // 这可以是一个更复杂的配置表
+        if (playerCount === 6) return ['预言家', '女巫', '猎人', '狼人', '狼人', '平民'];
+        if (playerCount === 7) return ['预言家', '女巫', '猎人', '狼人', '狼人', '平民', '平民'];
+        if (playerCount >= 8) {
+            const roles = ['预言家', '女巫', '猎人', '白痴', '狼人', '狼人', '狼人'];
+            while (roles.length < playerCount) {
+                roles.push('平民');
+            }
+            return roles;
+        }
+        return []; // 默认
+    }
+
+    playerCountInput.addEventListener('change', renderRoleSelection);
+
     // 开始游戏
     startGameButton.addEventListener('click', () => {
         const playerCount = parseInt(playerCountInput.value);
-        const selectedRoles = Array.from(roleSelectionContainer.querySelectorAll('input:checked')).map(input => input.value);
+        const rolesToAssign = getPresetRoles(playerCount);
 
-        // 简单的验证
-        if (selectedRoles.length === 0) {
-            alert('请至少选择一个角色！');
+        if (rolesToAssign.length !== playerCount) {
+            alert(`当前为${playerCount}人配置的角色数量为 ${rolesToAssign.length}，不匹配，请重新配置。`);
             return;
         }
 
-        // TODO: 更复杂的角色数量验证
-
-        initializeGame(playerCount, selectedRoles);
+        initializeGame(playerCount, rolesToAssign);
     });
 
     const actionControls = document.getElementById('action-controls');
@@ -78,16 +90,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 处理白天阶段
     function handleDayPhase() {
-        log('进入白天阶段，请玩家发言并准备投票。');
         // 在第一天处理警长竞选
         if (gameState.day === 1 && !gameState.players.some(p => p.isSheriff)) {
-            log('请进行警长竞选。');
-            // TODO: 实现警长竞选逻辑
+            handleSheriffElection(() => {
+                log('警长竞选结束，现在请玩家发言并准备投票。');
+                setupPlayerSelection(player => player.isAlive && !player.isRevealedIdiot, (selectedId) => {
+                    handleVote(selectedId);
+                }, '投票淘汰该玩家');
+            });
+        } else {
+            log('进入白天阶段，请玩家发言并准备投票。');
+            setupPlayerSelection(player => player.isAlive && !player.isRevealedIdiot, (selectedId) => {
+                handleVote(selectedId);
+            }, '投票淘汰该玩家');
         }
-
-        setupPlayerSelection(player => player.isAlive && !player.isRevealedIdiot, (selectedId) => {
-            handleVote(selectedId);
-        }, '投票淘汰该玩家');
     }
 
     // 处理投票结果
@@ -275,6 +291,69 @@ document.addEventListener('DOMContentLoaded', () => {
         doSave(); // 开始女巫的逻辑流程
     }
 
+    function handleSheriffElection(callback) {
+        log('请进行警长竞选。请选择所有参与竞选的玩家。');
+        let candidates = [];
+        clearActionControls();
+
+        document.querySelectorAll('.player-card').forEach(card => {
+            const playerId = parseInt(card.dataset.playerId);
+            const player = gameState.players.find(p => p.id === playerId);
+            if (player.isAlive) {
+                card.classList.add('selectable');
+                card.onclick = () => {
+                    card.classList.toggle('selected');
+                    if (candidates.includes(playerId)) {
+                        candidates = candidates.filter(id => id !== playerId);
+                    } else {
+                        candidates.push(playerId);
+                    }
+                };
+            }
+        });
+
+        const confirmCandidatesButton = document.createElement('button');
+        confirmCandidatesButton.textContent = '确认候选人';
+        confirmCandidatesButton.onclick = () => {
+            if (candidates.length === 0) {
+                alert('请至少选择一名候选人。');
+                return;
+            }
+            log(`警长候选人是: ${candidates.join(', ')} 号。`);
+            clearPlayerSelection();
+            voteForSheriff(candidates, callback);
+        };
+        actionControls.appendChild(confirmCandidatesButton);
+    }
+
+    function voteForSheriff(candidates, callback) {
+        let votes = {};
+        candidates.forEach(c => votes[c] = 0);
+
+        // 简化处理：直接弹出prompt收集票数
+        candidates.forEach(candidateId => {
+            const voteCount = prompt(`请输入 ${candidateId} 号候选人的票数:`, "0");
+            votes[candidateId] = parseInt(voteCount) || 0;
+        });
+
+        let maxVotes = -1;
+        let electedSheriffId = -1;
+        for (const candidateId in votes) {
+            if (votes[candidateId] > maxVotes) {
+                maxVotes = votes[candidateId];
+                electedSheriffId = parseInt(candidateId);
+            }
+        }
+
+        if (electedSheriffId !== -1) {
+            const sheriff = gameState.players.find(p => p.id === electedSheriffId);
+            sheriff.isSheriff = true;
+            log(`${sheriff.id} 号玩家当选为警长！`);
+            renderPlayers(gameState.players);
+        }
+        callback();
+    }
+
     function handleHunterSkill(callback) {
         log('猎人被淘汰，请选择一名玩家开枪带走。');
         setupPlayerSelection(p => p.isAlive, (shotId) => {
@@ -367,10 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 分配角色
-    function assignRoles(playerCount, selectedRoles) {
-        // TODO: 这部分应该更加灵活，基于用户的选择
-        const rolesToAssign = ['预言家', '女巫', '猎人', '狼人', '狼人', '平民', '平民', '白痴']; // 示例配置
-        
+    function assignRoles(playerCount, rolesToAssign) {
         // 打乱角色数组
         const shuffledRoles = rolesToAssign.sort(() => Math.random() - 0.5);
 
@@ -378,7 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 1; i <= playerCount; i++) {
             players.push({
                 id: i,
-                role: shuffledRoles[i - 1] || '平民', // 如果角色不够，默认为平民
+                role: shuffledRoles[i - 1],
                 isAlive: true,
                 isSheriff: false,
                 isRevealedIdiot: false,
@@ -408,6 +484,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (player.isRevealedIdiot) {
                 playerCard.classList.add('revealed-idiot');
+            }
+            if (player.isSheriff) {
+                playerCard.classList.add('sheriff');
             }
 
             // 在这里，我们为了方便调试，暂时显示角色。实际游戏中应该隐藏。

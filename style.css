@@ -104,6 +104,11 @@ body {
     background-color: #fffbe6;
 }
 
+.player-card.sheriff {
+    border-color: #d4af37;
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.7);
+}
+
 .player-card .role {
     font-size: 0.9em;
     color: #666;
