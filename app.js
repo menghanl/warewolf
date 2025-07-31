@@ -461,9 +461,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 sheriffVoteArea.classList.add('hidden');
                 callback();
             } else if (tie) {
-                alert('警长投票出现平票，请重新投票或协商。');
+                showModal('警长投票出现平票，请重新投票或协商。');
             } else {
-                alert('没有选出警长，请重新投票。');
+                showModal('没有选出警长，请重新投票。');
             }
         };
     }
@@ -670,7 +670,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 playerCard.classList.add('sheriff');
             }
 
-            // 在这里，我们为了方便调试，暂时显示角色。实际游戏中应该隐藏。
             playerCard.innerHTML = `<h3>玩家 ${player.id}</h3><div class="role">${player.role}</div>`;
             
             playerList.appendChild(playerCard);
