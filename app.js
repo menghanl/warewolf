@@ -724,6 +724,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 playerCard.innerHTML += '<span class="sheriff-badge">&#128081;</span>'; // 警徽图标
             }
 
+            // Add alignment class
+            const civilianRoles = ['平民'];
+            const godRoles = ['预言家', '女巫', '猎人', '白痴'];
+
+            if (civilianRoles.includes(player.role)) {
+                playerCard.classList.add('civilian-alignment');
+            } else if (godRoles.includes(player.role)) {
+                playerCard.classList.add('god-alignment');
+            } else if (player.role === '狼人') {
+                playerCard.classList.add('wolf-alignment');
+            }
+
             playerCard.innerHTML = `<h3>玩家 ${player.id}</h3><div class="role">${player.role}</div>`;
             
             playerList.appendChild(playerCard);

@@ -213,6 +213,22 @@ body {
     color: #666;
 }
 
+/* 阵营颜色提示 */
+.player-card.wolf-alignment {
+    background-color: #ffe0e0; /* 狼人 - 非常浅的红色 */
+    border-color: #ffcdd2;
+}
+
+.player-card.civilian-alignment {
+    background-color: #e0ffe0; /* 平民 - 非常浅的绿色 */
+    border-color: #c8e6c9;
+}
+
+.player-card.god-alignment {
+    background-color: #e0e0ff; /* 神职 - 非常浅的蓝色 */
+    border-color: #c5cae9;
+}
+
 /* 日志 */
 #event-log {
     background-color: #f9f9f9;
