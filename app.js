@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleProphetAction(callback) {
         const prophet = gameState.players.find(p => p.role === '预言家' && p.isAlive);
         if (!prophet) {
-            currentPrompt.textContent = '预言家已出局，请跳过此环节。';
+            currentPrompt.textContent = '预言家已出局。请主持人假装询问预言家要查验的玩家，然后点击“跳过”按钮。';
             log('预言家已出局，请跳过此环节。', 'info');
             clearActionControls();
             const skipButton = document.createElement('button');
