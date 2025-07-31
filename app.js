@@ -45,11 +45,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log('Role Counts:', roleCounts); // Add this line for debugging
 
+        const roleImageMap = {
+            '平民': 'villager.png',
+            '预言家': 'prophet.png',
+            '女巫': 'witch.png',
+            '猎人': 'hunter.png',
+            '白痴': 'stupid.png',
+            '狼人': 'wolfman.png'
+        };
+
         roleOrder.forEach(role => {
             const count = roleCounts[role] || 0; // Get count, default to 0 if role not present
             if (count > 0) { // Only display roles that are present
                 const roleDiv = document.createElement('div');
-                roleDiv.innerHTML = `<label>${role} x${count}</label>`;
+                const imageUrl = `images/roles/${roleImageMap[role]}`;
+                roleDiv.innerHTML = `<label><img src="${imageUrl}" alt="${role}" class="role-icon"><div class="role-name">${role}</div><div class="role-count">x${count}</div></label>`;
                 roleSelectionContainer.appendChild(roleDiv);
             }
         });
