@@ -54,16 +54,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getPresetRoles(playerCount) {
         // 这可以是一个更复杂的配置表
-        if (playerCount === 12) return ['狼人', '狼人', '狼人', '狼人', '预言家', '女巫', '猎人', '白痴', '平民', '平民', '平民', '平民'];
         if (playerCount === 6) return ['预言家', '女巫', '猎人', '狼人', '狼人', '平民'];
         if (playerCount === 7) return ['预言家', '女巫', '猎人', '狼人', '狼人', '平民', '平民'];
-        if (playerCount >= 8 && playerCount < 12) {
-            const roles = ['预言家', '女巫', '猎人', '白痴', '狼人', '狼人', '狼人'];
-            while (roles.length < playerCount) {
-                roles.push('平民');
-            }
-            return roles;
-        }
+        if (playerCount === 8) return ['预言家', '女巫', '猎人', '白痴', '狼人', '狼人', '狼人', '平民'];
+        if (playerCount === 9) return ['预言家', '女巫', '猎人', '白痴', '狼人', '狼人', '狼人', '平民', '平民'];
+        if (playerCount === 10) return ['预言家', '女巫', '猎人', '白痴', '狼人', '狼人', '狼人', '平民', '平民', '平民'];
+        if (playerCount === 11) return ['预言家', '女巫', '猎人', '白痴', '狼人', '狼人', '狼人', '狼人', '平民', '平民', '平民'];
+        if (playerCount === 12) return ['狼人', '狼人', '狼人', '狼人', '预言家', '女巫', '猎人', '白痴', '平民', '平民', '平民', '平民'];
         return []; // 默认
     }
 
@@ -78,8 +75,11 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Player Count:', playerCount);
         console.log('Roles to Assign Length:', rolesToAssign.length);
 
-        if (rolesToAssign.length !== playerCount) {
-            showModal(`当前为${playerCount}人配置的角色数量为 ${rolesToAssign.length}，不匹配，请重新配置。`, 'info');
+        if (rolesToAssign.length === 0) {
+            showModal(`当前玩家人数 ${playerCount} 不支持，请选择 6-12 之间的玩家人数。`, 'info');
+            return;
+        } else if (rolesToAssign.length !== playerCount) {
+            showModal(`当前为${playerCount}人配置的角色数量为 ${rolesToAssign.length}，与玩家人数不匹配，请检查配置。`, 'info');
             return;
         }
 

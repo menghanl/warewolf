@@ -12,8 +12,16 @@
         <div id="game-setup">
             <h1>狼人杀助手</h1>
             <div class="setup-section">
-                <label for="player-count">玩家人数:</label>
-                <input type="number" id="player-count" min="6" max="12" value="12">
+                <label for="player-count">玩家人数: <span style="font-size: 0.8em; color: #666;">(支持6-12人)</span></label>
+                <select id="player-count">
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12" selected>12</option>
+                </select>
             </div>
             <div class="setup-section">
                 <h3>选择角色:</h3>
