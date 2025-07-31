@@ -108,10 +108,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function runGameLoop() {
         const { phase, day } = gameState;
         if (phase === 'night') {
-            gamePhaseTitle.textContent = `第 ${day} 天 - 黑夜`;
+            gamePhaseTitle.textContent = `第 ${day} 天 - 黑夜 🌙`;
+            gamePhaseTitle.classList.remove('day-phase-bg');
+            gamePhaseTitle.classList.add('night-phase-bg');
             handleNightPhase();
         } else if (phase === 'day') {
-            gamePhaseTitle.textContent = `第 ${day} 天 - 白天`;
+            gamePhaseTitle.textContent = `第 ${day} 天 - 白天 ☀️`;
+            gamePhaseTitle.classList.remove('night-phase-bg');
+            gamePhaseTitle.classList.add('day-phase-bg');
             handleDayPhase();
         }
     }

@@ -70,6 +70,15 @@ body {
     letter-spacing: 1px; /* 字母间距 */
 }
 
+/* 游戏阶段背景颜色 */
+.day-phase-bg {
+    background-color: #87CEEB; /* 天蓝色 */
+}
+
+.night-phase-bg {
+    background-color: #4682B4; /* 钢蓝色 */
+}
+
 #current-prompt {
     text-align: center;
     font-size: 1.2em;
