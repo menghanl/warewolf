@@ -721,7 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (player.isSheriff) {
                 playerCard.classList.add('sheriff');
-                playerCard.innerHTML += '<span class="sheriff-badge">&#128081;</span>'; // 警徽图标
+                roleDisplay += ' &#128081;'; // 警徽图标
             }
 
             // Add alignment class
