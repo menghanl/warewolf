@@ -325,6 +325,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         currentPrompt.textContent = '女巫请睁眼。';
         log('女巫请睁眼。', 'action');
+        if (gameState.victim) {
+            log(`昨晚 ${gameState.victim} 号玩家倒牌了。`, 'info');
+        }
         clearActionControls();
 
         const doPoisonPhase = () => {
