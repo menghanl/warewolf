@@ -1,7 +1,7 @@
 body {
     font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     background-color: #2c3e50; /* 深蓝色背景，营造沉浸感 */
-    color: #ecf0f1; /* 浅色文字，与深色背景形成对比 */
+    color: #333; /* 默认文字颜色设置为深色 */
     margin: 0;
     padding: 20px;
     display: flex;
@@ -28,13 +28,11 @@ body {
 /* 游戏设置 */
 #game-setup h1 {
     text-align: center;
-    color: #333; /* 调整标题颜色为深色 */
     font-size: 2.5em; /* 增大标题字体 */
     margin-bottom: 30px;
 }
 
 #game-setup h3 {
-    color: #000; /* 设置为黑色 */
     margin-bottom: 15px;
 }
 
@@ -42,7 +40,6 @@ body {
     font-size: 1.1em; /* 增大标签字体 */
     margin-bottom: 8px;
     display: block;
-    color: #333; /* 设置为深色，确保可读性 */
 }
 
 #player-count {
@@ -172,7 +169,6 @@ body {
 
     .player-card h3 {
     font-size: 1.2em;
-    color: #333; /* 设置为深色 */
 }
 
     .player-card .role {
@@ -409,7 +405,6 @@ button.disabled-button:hover {
 
 #sheriff-vote-area h2 {
     margin-top: 0;
-    color: #333; /* 调整标题颜色为深色 */
 }
 
 #sheriff-candidates-list {
@@ -434,7 +429,6 @@ button.disabled-button:hover {
     font-weight: bold;
     min-width: 20px;
     text-align: center;
-    color: #333; /* 设置为深色 */
 }
 
 .candidate-vote-control button {
@@ -483,7 +477,6 @@ button.disabled-button:hover {
 #modal-text {
     margin: 0 0 20px 0;
     font-size: 18px;
-    color: #333; /* 设置为深色 */
 }
 
 #modal-close {
