@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         gameState = assignRoles(playerCount, selectedRoles);
         renderPlayers(gameState.players);
-        log('游戏开始！角色已秘密分配。');
+        log('游戏开始！角色已秘密分配。', 'info');
         runGameLoop();
     }
 
@@ -108,11 +108,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 处理白天阶段
     function handleDayPhase() {
-        log('天亮了，请睁眼。');
+        log('天亮了，请睁眼。', 'info');
 
         const afterDeathProcessing = () => {
             if (checkForWinner()) return;
-            log('请玩家发言并准备投票。');
+            log('请玩家发言并准备投票。', 'info');
             setupPlayerSelection(player => player.isAlive && !player.isRevealedIdiot, (selectedId) => {
                 handleVote(selectedId);
             }, '投票淘汰该玩家');
@@ -132,14 +132,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleVote(votedId) {
         const player = gameState.players.find(p => p.id === votedId);
         if (player) {
-            log(`${player.id} 号玩家被投票出局，身份是 ${player.role}。`);
+            log(`${player.id} 号玩家被投票出局，身份是 ${player.role}。`, 'action');
 
             if (player.role === '白痴') {
                 player.isRevealedIdiot = true;
-                log('白痴翻牌，保留在场上但失去投票权。');
+                log('白痴翻牌，保留在场上但失去投票权。', 'info');
                 if (player.isSheriff) {
                     player.isSheriff = false;
-                    log('白痴警长被投票出局，警徽被撕毁，请在下一个白天重新竞选警长。');
+                    log('白痴警长被投票出局，警徽被撕毁，请在下一个白天重新竞选警长。', 'info');
                 }
                 renderPlayers(gameState.players);
                 if (checkForWinner()) return;
@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (player.isSheriff) {
                 handleSheriffTransfer(() => {
                     if (checkForWinner()) return;
-                    startNextNight();
+                    startNextNext();
                 });
             } else {
                 if (checkForWinner()) return;
@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
         nightActions.push((callback) => {
-            log('黑夜结束。');
+            log('黑夜结束。', 'info');
 
             if (gameState.poisonedTarget && gameState.poisonedTarget === gameState.victim) {
                 gameState.victim = null;
@@ -235,9 +235,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (deathAnnouncements.length === 0) {
-            log('昨晚是平安夜。');
+            log('昨晚是平安夜。', 'info');
         } else {
-            log(deathAnnouncements.join('，') + '。');
+            log(deathAnnouncements.join('，') + '。', 'death');
         }
 
         renderPlayers(gameState.players);
@@ -261,37 +261,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleWolvesAction(callback) {
-        log('狼人请睁眼，请选择要淘汰的玩家。');
+        log('狼人请睁眼，请选择要淘汰的玩家。', 'action');
         setupPlayerSelection(player => player.isAlive, (selectedId) => {
             gameState.victim = selectedId;
-            log(`狼人选择了 ${selectedId} 号玩家。`);
+            log(`狼人选择了 ${selectedId} 号玩家。`, 'action');
             callback();
         });
     }
 
     function handleProphetAction(callback) {
-        log('预言家请睁眼，请选择要查验的玩家。');
+        log('预言家请睁眼，请选择要查验的玩家。', 'action');
         setupPlayerSelection(player => player.isAlive, (selectedId) => {
             const targetPlayer = gameState.players.find(p => p.id === selectedId);
             const isWolf = targetPlayer.role === '狼人';
             showModal(`查验结果：${selectedId} 号玩家是 ${isWolf ? '狼人' : '好人'}。`, () => {
-                log(`预言家查验了 ${selectedId} 号玩家。`);
+                log(`预言家查验了 ${selectedId} 号玩家。`, 'action');
                 callback();
             });
         });
     }
 
     function handleWitchAction(callback) {
-        log('女巫请睁眼。');
+        log('女巫请睁眼。', 'action');
         clearActionControls();
 
         const doSave = () => {
             if (gameState.victim && !gameState.witchUsedSave) {
-                log(`昨晚 ${gameState.victim} 号玩家倒牌了，是否使用解药？`);
+                log(`昨晚 ${gameState.victim} 号玩家倒牌了，是否使用解药？`, 'action');
                 const saveButton = document.createElement('button');
                 saveButton.textContent = '使用解药';
                 saveButton.onclick = () => {
-                    log(`女巫使用了灵药，救了 ${gameState.victim} 号玩家。`);
+                    log(`女巫使用了灵药，救了 ${gameState.victim} 号玩家。`, 'action');
                     gameState.victim = null; // 救人成功
                     gameState.witchUsedSave = true;
                     doPoison(); // 进入毒人环节
@@ -311,14 +311,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const doPoison = () => {
             clearActionControls();
             if (!gameState.witchUsedPoison) {
-                log('是否使用毒药？');
+                log('是否使用毒药？', 'action');
                 const poisonButton = document.createElement('button');
                 poisonButton.textContent = '使用毒药';
                 poisonButton.onclick = () => {
                     setupPlayerSelection(p => p.isAlive, (poisonedId) => {
                         gameState.poisonedTarget = poisonedId;
                         gameState.witchUsedPoison = true;
-                        log(`女巫使用了毒药，选择了 ${poisonedId} 号玩家。`);
+                        log(`女巫使用了毒药，选择了 ${poisonedId} 号玩家。`, 'action');
                         callback(); // 完成女巫回合
                     }, '选择下毒目标');
                 };
@@ -338,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleSheriffTransfer(callback) {
-        log('警长已死亡。请主持人选择一名玩家移交警徽，然后点击“确认移交”；或者点击“撕毁警徽”。');
+        log('警长已死亡。请主持人选择一名玩家移交警徽，然后点击“确认移交”；或者点击“撕毁警徽”。', 'action');
         clearActionControls();
 
         setupPlayerSelection(p => p.isAlive, (newSheriffId) => {
@@ -347,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const newSheriff = gameState.players.find(p => p.id === newSheriffId);
             newSheriff.isSheriff = true;
-            log(`警徽已移交给 ${newSheriffId} 号玩家。`);
+            log(`警徽已移交给 ${newSheriffId} 号玩家。`, 'action');
             renderPlayers(gameState.players);
             callback();
         }, '确认移交');
@@ -357,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tearUpButton.onclick = () => {
             const oldSheriff = gameState.players.find(p => p.isSheriff);
             if (oldSheriff) oldSheriff.isSheriff = false;
-            log('警徽已被撕毁。');
+            log('警徽已被撕毁。', 'action');
             renderPlayers(gameState.players);
             clearActionControls();
             callback();
@@ -366,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleSheriffElection(callback) {
-        log('请进行警长竞选。请选择所有参与竞选的玩家。');
+        log('请进行警长竞选。请选择所有参与竞选的玩家。', 'action');
         let candidates = [];
         clearActionControls();
 
@@ -393,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('请至少选择一名候选人。');
                 return;
             }
-            log(`警长候选人是: ${candidates.join(', ')} 号。`);
+            log(`警长候选人是: ${candidates.join(', ')} 号。`, 'info');
             clearPlayerSelection();
             setupSheriffVoting(candidates, callback);
         };
@@ -456,16 +456,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (electedSheriffId !== -1 && !tie) {
                 const sheriff = gameState.players.find(p => p.id === electedSheriffId);
                 sheriff.isSheriff = true;
-                log(`${sheriff.id} 号玩家当选为警长！`);
+                log(`${sheriff.id} 号玩家当选为警长！`, 'action');
                 renderPlayers(gameState.players);
-                sheriffVoteArea.classList.add('hidden');
-                callback();
+            }
+            callback();
+        }
             } else if (tie) {
-                showModal('警长投票出现平票，请重新投票或协商。');
+                showModal('警长投票出现平票，请重新投票或协商。', 'info');
             } else {
-                showModal('没有选出警长，请重新投票。');
+                showModal('没有选出警长，请重新投票。', 'info');
             }
         };
+    }
     }
 
     function voteForSheriff(candidates, callback) { // 这个函数现在是多余的，会被setupSheriffVoting取代
@@ -498,12 +500,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleHunterSkill(callback) {
-        log('猎人被淘汰，请选择一名玩家开枪带走。');
+        log('猎人被淘汰，请选择一名玩家开枪带走。', 'action');
         setupPlayerSelection(p => p.isAlive, (shotId) => {
             const shotPlayer = gameState.players.find(p => p.id === shotId);
             if (shotPlayer) {
                 shotPlayer.isAlive = false;
-                log(`猎人开枪带走了 ${shotPlayer.id} 号玩家。`);
+                log(`猎人开枪带走了 ${shotPlayer.id} 号玩家。`, 'action');
                 renderPlayers(gameState.players);
 
                 if (shotPlayer.isSheriff) {
@@ -544,7 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearActionControls();
                 onConfirm(confirmedId);
             } else {
-                alert('请选择一个玩家。');
+                showModal('请选择一个玩家。', 'info');
             }
         };
         actionControls.appendChild(confirmButton);
@@ -668,6 +670,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (player.isSheriff) {
                 playerCard.classList.add('sheriff');
+                playerCard.innerHTML += '<span class="sheriff-badge">&#128081;</span>'; // 警徽图标
             }
 
             playerCard.innerHTML = `<h3>玩家 ${player.id}</h3><div class="role">${player.role}</div>`;
@@ -677,9 +680,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 记录日志
-    function log(message) {
+    function log(message, type = 'info') {
         const li = document.createElement('li');
         li.textContent = message;
+        li.classList.add(`log-${type}`);
         logList.appendChild(li);
         logList.scrollTop = logList.scrollHeight; // 自动滚动到底部
     }

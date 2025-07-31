@@ -5,7 +5,8 @@ body {
     margin: 0;
     padding: 20px;
     display: flex;
-    justify-content: center;
+    flex-direction: column; /* 垂直布局 */
+    justify-content: flex-start; /* 从顶部开始 */
     align-items: center;
     min-height: 100vh;
 }
@@ -17,6 +18,7 @@ body {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px; /* 底部留白 */
 }
 
 .hidden {
@@ -42,34 +44,95 @@ body {
 
 #role-selection {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* 调整minmax */
+    gap: 8px; /* 调整gap */
 }
 
 #role-selection label {
     display: block;
-    padding: 8px;
+    padding: 6px;
     border: 1px solid #ddd;
     border-radius: 4px;
     cursor: pointer;
-}
-
-#role-selection input {
-    margin-right: 5px;
+    font-size: 0.85em; /* 调整字体大小 */
 }
 
 /* 游戏主界面 */
 #game-board h2 {
     text-align: center;
     margin-bottom: 20px;
+    font-size: 1.8em; /* 增大字体 */
+    padding: 10px 15px; /* 增加内边距 */
+    background-color: #34495e; /* 深色背景 */
+    color: #fff; /* 白色文字 */
+    border-radius: 8px; /* 圆角 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* 阴影 */
+    letter-spacing: 1px; /* 字母间距 */
 }
 
 #player-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* 调整minmax */
+    gap: 10px; /* 调整gap */
     margin-bottom: 20px;
 }
+
+/* 响应式设计 */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+
+    #app {
+        padding: 15px;
+    }
+
+    #role-selection {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+
+    #role-selection label {
+        font-size: 0.8em;
+    }
+
+    #player-list {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+
+    .player-card {
+        padding: 10px;
+    }
+
+    .player-card h3 {
+        font-size: 1em;
+    }
+
+    .player-card .role {
+        font-size: 0.8em;
+    }
+
+    .player-card.dead::after {
+        font-size: 2.5em;
+    }
+
+    .sheriff-badge {
+        font-size: 1.2em;
+    }
+
+    button {
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    #modal-content {
+        padding: 20px;
+    }
+
+    #modal-text {
+        font-size: 16px;
+    }
+}
+
 
 .player-card {
     padding: 15px;
@@ -83,6 +146,20 @@ body {
 .player-card.dead {
     background-color: #e0e0e0;
     opacity: 0.6;
+    position: relative;
+}
+
+.player-card.dead::after {
+    content: 'X';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3em;
+    color: #c0392b;
+    font-weight: bold;
+    opacity: 0.8;
+    pointer-events: none; /* 确保不影响点击事件 */
 }
 
 .player-card.selectable {
@@ -102,11 +179,21 @@ body {
 .player-card.revealed-idiot {
     border-color: #f5a623;
     background-color: #fffbe6;
+    box-shadow: 0 0 8px rgba(245, 166, 35, 0.7);
 }
 
 .player-card.sheriff {
     border-color: #d4af37;
     box-shadow: 0 0 8px rgba(212, 175, 55, 0.7);
+    position: relative; /* 为警徽定位 */
+}
+
+.sheriff-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 1.5em;
+    color: #d4af37;
 }
 
 .player-card .role {
@@ -127,6 +214,26 @@ body {
 #log-list li {
     padding: 5px 0;
     border-bottom: 1px solid #eee;
+    font-size: 0.9em;
+}
+
+#log-list li.log-info {
+    color: #34495e;
+}
+
+#log-list li.log-action {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+#log-list li.log-death {
+    color: #c0392b;
+    font-weight: bold;
+    background-color: #ffebee;
+}
+
+#log-list li:last-child {
+    border-bottom: none;
 }
 
 /* 按钮 */
@@ -137,14 +244,22 @@ button {
     background-color: #1877f2;
     color: #fff;
     border: none;
-    border-radius: 6px;
+    border-radius: 25px; /* 更圆的按钮 */
     font-size: 16px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
 button:hover {
     background-color: #166fe5;
+    transform: translateY(-1px); /* 轻微上浮 */
+    box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+}
+
+button:active {
+    transform: translateY(1px); /* 按下效果 */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 #reset-game {
@@ -154,6 +269,13 @@ button:hover {
 
 #reset-game:hover {
     background-color: #c91f1f;
+}
+
+.player-card.selected {
+    border-color: #1877f2;
+    background-color: #e7f3ff;
+    transform: scale(1.02); /* 选中时轻微放大 */
+    box-shadow: 0 0 10px rgba(24, 119, 242, 0.7); /* 更明显的选中阴影 */
 }
 
 /* 警长投票区 */
