@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const startGameButton = document.getElementById('start-game');
     const playerList = document.getElementById('player-list');
     const gamePhaseTitle = document.getElementById('game-phase-title');
+    const currentPrompt = document.getElementById('current-prompt');
     const logList = document.getElementById('log-list');
     const resetGameButton = document.getElementById('reset-game');
     const modal = document.getElementById('modal');
@@ -30,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 动态生成角色选择
     function renderRoleSelection() {
+        console.log('renderRoleSelection called');
         roleSelectionContainer.innerHTML = '';
         // 简单的预设，可以根据玩家人数调整
         const playerCount = parseInt(playerCountInput.value) || 12;
@@ -39,6 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
             acc[role] = (acc[role] || 0) + 1;
             return acc;
         }, {});
+
+        console.log('Role Counts:', roleCounts); // Add this line for debugging
 
         Object.keys(roleCounts).forEach(role => {
             const count = roleCounts[role];
@@ -67,11 +71,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 开始游戏
     startGameButton.addEventListener('click', () => {
+        console.log('Start Game button clicked');
         const playerCount = parseInt(playerCountInput.value);
         const rolesToAssign = getPresetRoles(playerCount);
 
+        console.log('Player Count:', playerCount);
+        console.log('Roles to Assign Length:', rolesToAssign.length);
+
         if (rolesToAssign.length !== playerCount) {
-            alert(`当前为${playerCount}人配置的角色数量为 ${rolesToAssign.length}，不匹配，请重新配置。`);
+            showModal(`当前为${playerCount}人配置的角色数量为 ${rolesToAssign.length}，不匹配，请重新配置。`, 'info');
             return;
         }
 
@@ -91,6 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
         gameState = assignRoles(playerCount, selectedRoles);
         renderPlayers(gameState.players);
         log('游戏开始！角色已秘密分配。', 'info');
+        currentPrompt.textContent = '游戏开始！角色已秘密分配。';
+        console.log('Current Prompt set to:', currentPrompt.textContent);
         runGameLoop();
     }
 
@@ -108,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 处理白天阶段
     function handleDayPhase() {
+        currentPrompt.textContent = '天亮了，请睁眼。';
         log('天亮了，请睁眼。', 'info');
 
         const afterDeathProcessing = () => {
@@ -118,8 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }, '投票淘汰该玩家');
         };
 
-        // 在第一天或警长空缺时处理警长竞选
-        if (!gameState.players.some(p => p.isSheriff)) {
+        // 在第一天且警长空缺时处理警长竞选
+        if (gameState.day === 1 && !gameState.players.some(p => p.isSheriff)) {
             handleSheriffElection(() => {
                 processPendingDeaths(afterDeathProcessing);
             });
@@ -175,6 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 处理夜晚阶段
     function handleNightPhase() {
+        currentPrompt.textContent = '黑夜降临，请等待主持人指示。';
         gameState.victim = null;
         gameState.poisonedTarget = null;
         gameState.pendingDeaths = [];
@@ -184,10 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const witch = gameState.players.find(p => p.role === '女巫' && p.isAlive);
 
         // 简单的队列来处理行动顺序
-        const nightActions = [];
-        if (wolves.length > 0) nightActions.push(handleWolvesAction);
-        if (prophet) nightActions.push(handleProphetAction);
-        if (witch) nightActions.push(handleWitchAction);
+        const nightActions = [handleWolvesAction, handleProphetAction, handleWitchAction];
 
 
         nightActions.push((callback) => {
@@ -261,6 +270,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleWolvesAction(callback) {
+        const wolves = gameState.players.filter(p => p.role === '狼人' && p.isAlive);
+        if (wolves.length === 0) {
+            currentPrompt.textContent = '狼人已全部出局，今晚平安。';
+            log('狼人已全部出局，今晚平安。', 'info');
+            callback();
+            return;
+        }
+        currentPrompt.textContent = '狼人请睁眼，请选择要淘汰的玩家。';
         log('狼人请睁眼，请选择要淘汰的玩家。', 'action');
         setupPlayerSelection(player => player.isAlive, (selectedId) => {
             gameState.victim = selectedId;
@@ -270,6 +287,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleProphetAction(callback) {
+        const prophet = gameState.players.find(p => p.role === '预言家' && p.isAlive);
+        if (!prophet) {
+            currentPrompt.textContent = '预言家已出局，请跳过此环节。';
+            log('预言家已出局，请跳过此环节。', 'info');
+            clearActionControls();
+            const skipButton = document.createElement('button');
+            skipButton.textContent = '跳过';
+            skipButton.onclick = () => callback();
+            actionControls.appendChild(skipButton);
+            return;
+        }
+        currentPrompt.textContent = '预言家请睁眼，请选择要查验的玩家。';
         log('预言家请睁眼，请选择要查验的玩家。', 'action');
         setupPlayerSelection(player => player.isAlive, (selectedId) => {
             const targetPlayer = gameState.players.find(p => p.id === selectedId);
@@ -282,62 +311,76 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleWitchAction(callback) {
+        const witch = gameState.players.find(p => p.role === '女巫' && p.isAlive);
+        if (!witch) {
+            currentPrompt.textContent = '女巫已出局。';
+            log('女巫已出局。', 'info');
+            callback();
+            return;
+        }
+
+        currentPrompt.textContent = '女巫请睁眼。';
         log('女巫请睁眼。', 'action');
         clearActionControls();
 
-        const doSave = () => {
-            if (gameState.victim && !gameState.witchUsedSave) {
-                log(`昨晚 ${gameState.victim} 号玩家倒牌了，是否使用解药？`, 'action');
-                const saveButton = document.createElement('button');
-                saveButton.textContent = '使用解药';
-                saveButton.onclick = () => {
-                    log(`女巫使用了灵药，救了 ${gameState.victim} 号玩家。`, 'action');
-                    gameState.victim = null; // 救人成功
-                    gameState.witchUsedSave = true;
-                    doPoison(); // 进入毒人环节
-                };
+        const doPoisonPhase = () => {
+            clearActionControls(); // Clear save/skip buttons
 
-                const skipSaveButton = document.createElement('button');
-                skipSaveButton.textContent = '跳过';
-                skipSaveButton.onclick = () => doPoison(); // 进入毒人环节
-
-                actionControls.appendChild(saveButton);
-                actionControls.appendChild(skipSaveButton);
+            const poisonButton = document.createElement('button');
+            poisonButton.textContent = '使用毒药';
+            if (gameState.witchUsedPoison) {
+                poisonButton.classList.add('disabled-button');
+                poisonButton.disabled = true;
+                poisonButton.onclick = () => showModal('毒药已用。', () => {});
             } else {
-                doPoison();
-            }
-        };
-
-        const doPoison = () => {
-            clearActionControls();
-            if (!gameState.witchUsedPoison) {
-                log('是否使用毒药？', 'action');
-                const poisonButton = document.createElement('button');
-                poisonButton.textContent = '使用毒药';
                 poisonButton.onclick = () => {
                     setupPlayerSelection(p => p.isAlive, (poisonedId) => {
                         gameState.poisonedTarget = poisonedId;
                         gameState.witchUsedPoison = true;
                         log(`女巫使用了毒药，选择了 ${poisonedId} 号玩家。`, 'action');
-                        callback(); // 完成女巫回合
+                        callback(); // Complete witch's turn
                     }, '选择下毒目标');
                 };
-
-                const skipPoisonButton = document.createElement('button');
-                skipPoisonButton.textContent = '跳过';
-                skipPoisonButton.onclick = () => callback(); // 完成女巫回合
-
-                actionControls.appendChild(poisonButton);
-                actionControls.appendChild(skipPoisonButton);
-            } else {
-                callback(); // 药都用完了，直接结束
             }
+            actionControls.appendChild(poisonButton);
+
+            const skipPoisonButton = document.createElement('button');
+            skipPoisonButton.textContent = '跳过';
+            skipPoisonButton.onclick = () => callback(); // Skip poison, complete witch's turn
+            actionControls.appendChild(skipPoisonButton);
         };
 
-        doSave(); // 开始女巫的逻辑流程
+        // Save phase
+        const saveButton = document.createElement('button');
+        saveButton.textContent = '使用解药';
+        if (!gameState.victim || gameState.witchUsedSave) {
+            saveButton.classList.add('disabled-button');
+            saveButton.disabled = true;
+            saveButton.onclick = () => {
+                if (!gameState.victim) {
+                    showModal('昨晚是平安夜，无人倒牌。', () => {});
+                } else {
+                    showModal('解药已用。', () => {});
+                }
+            };
+        } else {
+            saveButton.onclick = () => {
+                log(`女巫使用了灵药，救了 ${gameState.victim} 号玩家。`, 'action');
+                gameState.victim = null; // Saved
+                gameState.witchUsedSave = true;
+                doPoisonPhase(); // Proceed to poison phase
+            };
+        }
+        actionControls.appendChild(saveButton);
+
+        const skipSaveButton = document.createElement('button');
+        skipSaveButton.textContent = '跳过';
+        skipSaveButton.onclick = () => doPoisonPhase(); // Skip save, proceed to poison phase
+        actionControls.appendChild(skipSaveButton);
     }
 
     function handleSheriffTransfer(callback) {
+        currentPrompt.textContent = '警长已死亡。请主持人选择一名玩家移交警徽，或撕毁警徽。';
         log('警长已死亡。请主持人选择一名玩家移交警徽，然后点击“确认移交”；或者点击“撕毁警徽”。', 'action');
         clearActionControls();
 
@@ -366,6 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleSheriffElection(callback) {
+        currentPrompt.textContent = '请进行警长竞选。请选择所有参与竞选的玩家。';
         log('请进行警长竞选。请选择所有参与竞选的玩家。', 'action');
         let candidates = [];
         clearActionControls();
@@ -390,7 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
         confirmCandidatesButton.textContent = '确认候选人';
         confirmCandidatesButton.onclick = () => {
             if (candidates.length === 0) {
-                alert('请至少选择一名候选人。');
+                showModal('请至少选择一名候选人。', 'info');
                 return;
             }
             log(`警长候选人是: ${candidates.join(', ')} 号。`, 'info');
@@ -467,8 +511,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
     }
-    }
-    }
 
     function voteForSheriff(candidates, callback) { // 这个函数现在是多余的，会被setupSheriffVoting取代
         // 确保候选人按ID顺序排序，以便询问票数时顺序一致
@@ -500,6 +542,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleHunterSkill(callback) {
+        const hunter = gameState.players.find(p => p.role === '猎人' && !p.isAlive); // Find the dead hunter
+        const isPoisoned = gameState.pendingDeaths.some(death => death.id === hunter.id && death.reason === '被毒杀');
+
+        if (isPoisoned) {
+            log('猎人被毒死，无法开枪。', 'info');
+            showModal('猎人被毒死，无法开枪。', () => {
+                callback();
+            });
+            return;
+        }
+
         log('猎人被淘汰，请选择一名玩家开枪带走。', 'action');
         setupPlayerSelection(p => p.isAlive, (shotId) => {
             const shotPlayer = gameState.players.find(p => p.id === shotId);
@@ -617,7 +670,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (winner) {
             const victoryMessage = `游戏结束，${reason}，${winner}胜利！`;
             gamePhaseTitle.textContent = `${winner}胜利！`;
-            log(victoryMessage);
+            log(victoryMessage, 'info');
             showModal(victoryMessage);
             clearActionControls();
             // 禁用所有未来的操作
@@ -682,9 +735,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // 记录日志
     function log(message, type = 'info') {
         const li = document.createElement('li');
-        li.textContent = message;
+        const now = new Date();
+        const timestamp = `[${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}]`;
+        li.textContent = `${timestamp} ${message}`;
         li.classList.add(`log-${type}`);
-        logList.appendChild(li);
+        logList.prepend(li);
         logList.scrollTop = logList.scrollHeight; // 自动滚动到底部
     }
 

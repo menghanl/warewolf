@@ -274,6 +274,20 @@ button:active {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+/* 禁用按钮样式 */
+button.disabled-button {
+    background-color: #cccccc; /* 灰色背景 */
+    cursor: not-allowed; /* 禁用鼠标样式 */
+    box-shadow: none; /* 移除阴影 */
+    transform: none; /* 移除动画 */
+}
+
+button.disabled-button:hover {
+    background-color: #cccccc; /* 保持灰色 */
+    transform: none; /* 移除动画 */
+    box-shadow: none; /* 移除阴影 */
+}
+
 #reset-game {
     margin-top: 20px;
     background-color: #e02c2c;
