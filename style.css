@@ -70,6 +70,18 @@ body {
     letter-spacing: 1px; /* 字母间距 */
 }
 
+#current-prompt {
+    text-align: center;
+    font-size: 1.2em;
+    color: #e74c3c; /* 醒目的颜色 */
+    font-weight: bold;
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #e74c3c;
+    border-radius: 5px;
+    background-color: #fdeded;
+}
+
 #player-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* 调整minmax */

@@ -458,15 +458,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 sheriff.isSheriff = true;
                 log(`${sheriff.id} 号玩家当选为警长！`, 'action');
                 renderPlayers(gameState.players);
-            }
-            callback();
-        }
+                sheriffVoteArea.classList.add('hidden');
+                callback();
             } else if (tie) {
                 showModal('警长投票出现平票，请重新投票或协商。', 'info');
             } else {
                 showModal('没有选出警长，请重新投票。', 'info');
             }
         };
+    }
     }
     }
 
@@ -493,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (electedSheriffId !== -1) {
             const sheriff = gameState.players.find(p => p.id === electedSheriffId);
             sheriff.isSheriff = true;
-            log(`${sheriff.id} 号玩家当选为警长！`);
+            log(`${sheriff.id} 号玩家当选为警长！`, 'action');
             renderPlayers(gameState.players);
         }
         callback();
