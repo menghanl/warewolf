@@ -12,6 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalText = document.getElementById('modal-text');
     const modalClose = document.getElementById('modal-close');
 
+    const sheriffVoteArea = document.getElementById('sheriff-vote-area');
+    const sheriffCandidatesList = document.getElementById('sheriff-candidates-list');
+    const confirmSheriffVoteButton = document.getElementById('confirm-sheriff-vote');
+
     const availableRoles = ['平民', '预言家', '女巫', '猎人', '白痴', '狼人'];
 
     // 显示模态框
@@ -391,13 +395,80 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             log(`警长候选人是: ${candidates.join(', ')} 号。`);
             clearPlayerSelection();
-            voteForSheriff(candidates, callback);
+            setupSheriffVoting(candidates, callback);
         };
         actionControls.appendChild(confirmCandidatesButton);
     }
 
-    function voteForSheriff(candidates, callback) {
+    function setupSheriffVoting(candidates, callback) {
+        sheriffVoteArea.classList.remove('hidden');
+        sheriffCandidatesList.innerHTML = '';
         let votes = {};
+
+        candidates.sort((a, b) => a - b); // 确保顺序
+
+        candidates.forEach(candidateId => {
+            votes[candidateId] = 0;
+            const candidateDiv = document.createElement('div');
+            candidateDiv.className = 'candidate-vote-control';
+            candidateDiv.innerHTML = `
+                <span>玩家 ${candidateId}</span>
+                <button class="vote-minus" data-id="${candidateId}">-</button>
+                <span class="vote-count" data-id="${candidateId}">0</span>
+                <button class="vote-plus" data-id="${candidateId}">+</button>
+            `;
+            sheriffCandidatesList.appendChild(candidateDiv);
+        });
+
+        sheriffCandidatesList.querySelectorAll('.vote-plus').forEach(button => {
+            button.onclick = (e) => {
+                const id = parseInt(e.target.dataset.id);
+                votes[id]++;
+                e.target.previousElementSibling.textContent = votes[id];
+            };
+        });
+
+        sheriffCandidatesList.querySelectorAll('.vote-minus').forEach(button => {
+            button.onclick = (e) => {
+                const id = parseInt(e.target.dataset.id);
+                if (votes[id] > 0) {
+                    votes[id]--;
+                    e.target.nextElementSibling.textContent = votes[id];
+                }
+            };
+        });
+
+        confirmSheriffVoteButton.onclick = () => {
+            let maxVotes = -1;
+            let electedSheriffId = -1;
+            let tie = false;
+
+            for (const candidateId in votes) {
+                if (votes[candidateId] > maxVotes) {
+                    maxVotes = votes[candidateId];
+                    electedSheriffId = parseInt(candidateId);
+                    tie = false;
+                } else if (votes[candidateId] === maxVotes) {
+                    tie = true;
+                }
+            }
+
+            if (electedSheriffId !== -1 && !tie) {
+                const sheriff = gameState.players.find(p => p.id === electedSheriffId);
+                sheriff.isSheriff = true;
+                log(`${sheriff.id} 号玩家当选为警长！`);
+                renderPlayers(gameState.players);
+                sheriffVoteArea.classList.add('hidden');
+                callback();
+            } else if (tie) {
+                alert('警长投票出现平票，请重新投票或协商。');
+            } else {
+                alert('没有选出警长，请重新投票。');
+            }
+        };
+    }
+
+    function voteForSheriff(candidates, callback) { // 这个函数现在是多余的，会被setupSheriffVoting取代
         // 确保候选人按ID顺序排序，以便询问票数时顺序一致
         candidates.sort((a, b) => a - b);
         candidates.forEach(c => votes[c] = 0);
@@ -507,6 +578,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const aliveGods = alivePlayers.filter(p => ['预言家', '女巫', '猎人', '白痴'].includes(p.role));
         const aliveVillagers = alivePlayers.filter(p => p.role === '平民');
 
+        let totalGoodVotes = 0;
+        alivePlayers.forEach(player => {
+            if (player.role !== '狼人') { // 好人阵营
+                if (player.isSheriff) {
+                    totalGoodVotes += 1.5; // 警长1.5票
+                } else {
+                    totalGoodVotes += 1; // 普通玩家1票
+                }
+            }
+        });
+
         let winner = null;
         let reason = '';
 
@@ -516,10 +598,10 @@ document.addEventListener('DOMContentLoaded', () => {
             reason = '所有狼人已被淘汰';
         }
         // 狼人阵营胜利条件：
-        // 1. 狼人数量达到或超过好人数量
+        // 1. 狼人数量达到或超过好人有效票数
         // 2. 所有平民出局 (屠边)
         // 3. 所有神职出局 (屠边)
-        else if (aliveWolves.length >= (aliveGods.length + aliveVillagers.length)) {
+        else if (aliveWolves.length >= totalGoodVotes) {
             winner = '狼人阵营';
             reason = '狼人数量已达到或超过好人数量';
         } else if (aliveVillagers.length === 0) {
