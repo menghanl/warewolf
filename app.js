@@ -721,7 +721,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (player.isSheriff) {
                 playerCard.classList.add('sheriff');
-                roleDisplay += ' &#128081;'; // 警徽图标
             }
 
             // Add alignment class
@@ -748,6 +747,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             playerCard.innerHTML = `<h3>玩家 ${player.id}</h3><div class="role">${roleDisplay}</div>`;
+
+            if (player.isSheriff) {
+                const sheriffBadge = document.createElement('span');
+                sheriffBadge.className = 'sheriff-badge';
+                sheriffBadge.innerHTML = '&#128081;';
+                playerCard.appendChild(sheriffBadge);
+            }
             
             playerList.appendChild(playerCard);
         });
