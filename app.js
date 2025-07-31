@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmSheriffVoteButton = document.getElementById('confirm-sheriff-vote');
 
     const availableRoles = ['平民', '预言家', '女巫', '猎人', '白痴', '狼人'];
+    const roleOrder = ['狼人', '预言家', '女巫', '猎人', '白痴', '平民']; // Define a fixed order for roles
 
     // 显示模态框
     function showModal(text, callback) {
@@ -44,11 +45,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         console.log('Role Counts:', roleCounts); // Add this line for debugging
 
-        Object.keys(roleCounts).forEach(role => {
-            const count = roleCounts[role];
-            const roleDiv = document.createElement('div');
-            roleDiv.innerHTML = `<label>${role} x${count}</label>`;
-            roleSelectionContainer.appendChild(roleDiv);
+        roleOrder.forEach(role => {
+            const count = roleCounts[role] || 0; // Get count, default to 0 if role not present
+            if (count > 0) { // Only display roles that are present
+                const roleDiv = document.createElement('div');
+                roleDiv.innerHTML = `<label>${role} x${count}</label>`;
+                roleSelectionContainer.appendChild(roleDiv);
+            }
         });
     }
 
