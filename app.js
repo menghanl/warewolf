@@ -736,7 +736,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 playerCard.classList.add('wolf-alignment');
             }
 
-            playerCard.innerHTML = `<h3>玩家 ${player.id}</h3><div class="role">${player.role}</div>`;
+            let roleDisplay = player.role;
+            if (player.role === '预言家') {
+                roleDisplay += ' 🔮';
+            } else if (player.role === '女巫') {
+                roleDisplay += ' 🧙';
+            } else if (player.role === '猎人') {
+                roleDisplay += ' 🏹';
+            } else if (player.role === '白痴') {
+                roleDisplay += ' 🃏';
+            }
+
+            playerCard.innerHTML = `<h3>玩家 ${player.id}</h3><div class="role">${roleDisplay}</div>`;
             
             playerList.appendChild(playerCard);
         });
