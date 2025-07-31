@@ -357,14 +357,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Save phase
         const saveButton = document.createElement('button');
         saveButton.textContent = '使用解药';
-        if (!gameState.victim || gameState.witchUsedSave) {
+        const witchPlayer = gameState.players.find(p => p.role === '女巫'); // Get witch player object
+        const isWitchVictim = gameState.victim === witchPlayer.id; // Check if witch is the victim
+
+        if (!gameState.victim || gameState.witchUsedSave || isWitchVictim) {
             saveButton.classList.add('disabled-button');
             saveButton.disabled = true;
             saveButton.onclick = () => {
                 if (!gameState.victim) {
                     showModal('昨晚是平安夜，无人倒牌。', () => {});
-                } else {
+                } else if (gameState.witchUsedSave) {
                     showModal('解药已用。', () => {});
+                } else if (isWitchVictim) {
+                    showModal('女巫不能自救。', () => {});
                 }
             };
         } else {
