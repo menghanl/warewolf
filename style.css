@@ -405,6 +405,7 @@ button.disabled-button:hover {
 
 #sheriff-vote-area h2 {
     margin-top: 0;
+    color: #333; /* 设置为深色 */
 }
 
 #sheriff-candidates-list {
