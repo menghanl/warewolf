@@ -547,9 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (isPoisoned) {
             log('猎人被毒死，无法开枪。', 'info');
-            showModal('猎人被毒死，无法开枪。', () => {
-                callback();
-            });
+            callback();
             return;
         }
 
