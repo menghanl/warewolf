@@ -1,0 +1,119 @@
+
+{
+  "appTitle": "狼人杀助手",
+  "playerCountLabel": "玩家人数:",
+  "playerCountHint": "(支持6-12人)",
+  "roleSelectionLabel": "选择角色:",
+  "startGameButton": "开始游戏",
+  "gameInProgress": "游戏进行中",
+  "sheriffVoteTitle": "警长投票",
+  "confirmSheriffVoteButton": "确认投票结果",
+  "gameLogTitle": "游戏日志",
+  "resetGameButton": "重置游戏",
+  "modalCloseButton": "好的",
+  "language": "语言",
+  "roles": {
+    "villager": "平民",
+    "prophet": "预言家",
+    "witch": "女巫",
+    "hunter": "猎人",
+    "stupid": "白痴",
+    "wolfman": "狼人"
+  },
+  "error": {
+    "unsupportedPlayerCount": "当前玩家人数 {0} 不支持，请选择 6-12 之间的玩家人数。",
+    "roleMismatch": "当前为{0}人配置的角色数量为 {1}，与玩家人数不匹配，请检查配置。"
+  },
+  "prompt": {
+    "gameStarted": "游戏开始！角色已秘密分配。",
+    "daylight": "天亮了，请睁眼。",
+    "nightfall": "黑夜降临，请等待主持人指示。",
+    "wolvesAction": "狼人请睁眼，请选择要淘汰的玩家。",
+    "wolvesAllOut": "狼人已全部出局，今晚平安。",
+    "prophetAction": "预言家请睁眼，请选择要查验的玩家。",
+    "prophetIsOut": "预言家已出局。请主持人假装询问预言家要查验的玩家，然后点击“跳过”按钮。",
+    "witchAction": "女巫请睁眼。",
+    "witchIsOut": "女巫已出局。",
+    "sheriffDied": "警长已死亡。请主持人选择一名玩家移交警徽，或撕毁警徽。",
+    "sheriffElection": "请进行警长竞选。请选择所有参与竞选的玩家。"
+  },
+  "log": {
+    "gameStarted": "游戏开始！角色已秘密分配。",
+    "daylight": "天亮了，请睁眼。",
+    "discussAndVote": "请玩家发言并准备投票。",
+    "votedOut": "{0} 号玩家被投票出局，身份是 {1}。",
+    "idiotRevealed": "白痴翻牌，保留在场上但失去投票权。",
+    "idiotSheriffVotedOut": "白痴警长被投票出局，警徽被撕毁，请在下一个白天重新竞选警长。",
+    "nightEnd": "黑夜结束。",
+    "safeNight": "昨晚是平安夜。",
+    "deathAnnouncements": "{0}。",
+    "playerDiedLastNight": "{0} 号玩家昨晚因 {1} 而出局",
+    "wolvesAction": "狼人请睁眼，请选择要淘汰的玩家。",
+    "wolvesSelected": "狼人选择了 {0} 号玩家。",
+    "wolvesAllOut": "狼人已全部出局，今晚平安。",
+    "prophetAction": "预言家请睁眼，请选择要查验的玩家。",
+    "prophetChecked": "预言家查验了 {0} 号玩家。",
+    "prophetIsOut": "预言家已出局，请跳过此环节。",
+    "witchAction": "女巫请睁眼。",
+    "witchVictimInfo": "昨晚 {0} 号玩家倒牌了。",
+    "witchIsOut": "女巫已出局。",
+    "witchUsedPoison": "女巫使用了毒药，选择了 {0} 号玩家。",
+    "witchUsedAntidote": "女巫使用了灵药，救了 {0} 号玩家。",
+    "sheriffDied": "警长已死亡。请主持人选择一名玩家移交警徽，然后点击“确认移交”；或者点击“撕毁警徽”。",
+    "sheriffTransferred": "警徽已移交给 {0} 号玩家。",
+    "badgeTornUp": "警徽已被撕毁。",
+    "sheriffElection": "请进行警长竞选。请选择所有参与竞选的玩家。",
+    "sheriffCandidates": "警长候选人是: {0} 号。",
+    "sheriffElected": "{0} 号玩家当选为警长！",
+    "hunterPoisoned": "猎人被毒死，无法开枪。",
+    "hunterAction": "猎人被淘汰，请选择一名玩家开枪带走。",
+    "hunterShot": "猎人开枪带走了 {0} 号玩家。",
+    "gameOverLog": "游戏结束，{0}，{1}胜利！"
+  },
+  "modal": {
+    "prophetResult": "查验结果：{0} 号玩家是 {1}。",
+    "poisonUsed": "毒药已用。",
+    "noVictim": "昨晚是平安夜，无人倒牌。",
+    "antidoteUsed": "解药已用。",
+    "witchCannotSaveSelf": "女巫不能自救。",
+    "selectOneCandidate": "请至少选择一名候选人。",
+    "tieVote": "警长投票出现平票，请重新投票或协商。",
+    "noSheriffElected": "没有选出警长，请重新投票。",
+    "selectPlayer": "请选择一个玩家。",
+    "gameOver": "游戏结束，{0}，{1}胜利！"
+  },
+  "button": {
+    "voteOut": "投票淘汰该玩家",
+    "skip": "跳过",
+    "usePoison": "使用毒药",
+    "selectPoisonTarget": "选择下毒目标",
+    "useAntidote": "使用解药",
+    "confirmTransfer": "确认移交",
+    "tearUpBadge": "撕毁警徽",
+    "confirmCandidates": "确认候选人",
+    "confirmShot": "确认开枪",
+    "confirmSelection": "确认选择"
+  },
+  "reason": {
+    "poisoned": "被毒杀",
+    "wolf": "被狼人淘汰",
+    "allWolvesEliminated": "所有狼人已被淘汰",
+    "allVillagersEliminated": "所有平民已被淘汰",
+    "allGodsEliminated": "所有神职已被淘汰"
+  },
+  "winner": {
+    "good": "好人阵营",
+    "werewolves": "狼人阵营"
+  },
+  "misc": {
+    "player": "玩家",
+    "joiner": "，",
+    "wolf": "狼人",
+    "good": "好人"
+  },
+  "gamePhase": {
+    "night": "第 {0} 天 - 黑夜 🌙",
+    "day": "第 {0} 天 - 白天 ☀️",
+    "gameOver": "{0}胜利！"
+  }
+}

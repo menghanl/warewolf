@@ -1,4 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // i18n
+    let translations = {};
+    let currentLang = 'zh-CN';
+
+    // DOM Elements
     const gameSetup = document.getElementById('game-setup');
     const gameBoard = document.getElementById('game-board');
     const playerCountInput = document.getElementById('player-count');
@@ -12,17 +17,84 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('modal');
     const modalText = document.getElementById('modal-text');
     const modalClose = document.getElementById('modal-close');
-
     const sheriffVoteArea = document.getElementById('sheriff-vote-area');
     const sheriffCandidatesList = document.getElementById('sheriff-candidates-list');
     const confirmSheriffVoteButton = document.getElementById('confirm-sheriff-vote');
+    const langZhButton = document.getElementById('lang-zh');
+    const langEnButton = document.getElementById('lang-en');
+    const actionControls = document.getElementById('action-controls');
 
-    const availableRoles = ['平民', '预言家', '女巫', '猎人', '白痴', '狼人'];
-    const roleOrder = ['狼人', '预言家', '女巫', '猎人', '白痴', '平民']; // Define a fixed order for roles
+    // Game State
+    let gameState = {};
+    let selectedPlayerId = null;
 
-    // 显示模态框
-    function showModal(text, callback) {
-        modalText.textContent = text;
+    // --- I18n Functions ---
+    async function loadTranslations(lang) {
+        try {
+            const response = await fetch(`locales/${lang}.json`);
+            if (!response.ok) {
+                throw new Error(`Failed to load ${lang}.json`);
+            }
+            translations = await response.json();
+        } catch (error) {
+            console.error("Error loading translations:", error);
+            // Fallback to Chinese on error
+            if (lang !== 'zh-CN') {
+                await loadTranslations('zh-CN');
+            }
+        }
+    }
+
+    function t(key, ...args) {
+        let text = key.split('.').reduce((obj, k) => (obj && obj[k] !== 'undefined') ? obj[k] : key, translations);
+        if (args.length > 0) {
+            args.forEach((arg, i) => {
+                text = text.replace(`{${i}}`, arg);
+            });
+        }
+        return text;
+    }
+
+    function updateUI() {
+        document.querySelectorAll('[data-i18n-key]').forEach(el => {
+            const key = el.getAttribute('data-i18n-key');
+            // For elements like <title>, we set textContent. For buttons, we might also set textContent.
+            // This handles most cases.
+            el.textContent = t(key);
+        });
+        // Specific updates for dynamic content
+        renderRoleSelection();
+        if (gameState.players) {
+            renderPlayers(gameState.players);
+        }
+    }
+
+    async function setLanguage(lang) {
+        currentLang = lang;
+        await loadTranslations(lang);
+        localStorage.setItem('preferredLang', lang);
+        document.documentElement.lang = lang.split('-')[0];
+        
+        langZhButton.classList.toggle('active', lang === 'zh-CN');
+        langEnButton.classList.toggle('active', lang === 'en-US');
+        
+        updateUI();
+    }
+
+    // --- Game Logic ---
+
+    const roleOrder = ['wolfman', 'prophet', 'witch', 'hunter', 'stupid', 'villager'];
+    const roleImageMap = {
+        'villager': 'villager.png',
+        'prophet': 'prophet.png',
+        'witch': 'witch.png',
+        'hunter': 'hunter.png',
+        'stupid': 'stupid.png',
+        'wolfman': 'wolfman.png'
+    };
+
+    function showModal(key, callback, ...args) {
+        modalText.textContent = t(key, ...args);
         modal.classList.remove('hidden');
         modalClose.onclick = () => {
             modal.classList.add('hidden');
@@ -30,11 +102,8 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // 动态生成角色选择
     function renderRoleSelection() {
-        console.log('renderRoleSelection called');
         roleSelectionContainer.innerHTML = '';
-        // 简单的预设，可以根据玩家人数调整
         const playerCount = parseInt(playerCountInput.value) || 12;
         const roles = getPresetRoles(playerCount);
 
@@ -43,110 +112,83 @@ document.addEventListener('DOMContentLoaded', () => {
             return acc;
         }, {});
 
-        console.log('Role Counts:', roleCounts); // Add this line for debugging
-
-        const roleImageMap = {
-            '平民': 'villager.png',
-            '预言家': 'prophet.png',
-            '女巫': 'witch.png',
-            '猎人': 'hunter.png',
-            '白痴': 'stupid.png',
-            '狼人': 'wolfman.png'
-        };
-
-        roleOrder.forEach(role => {
-            const count = roleCounts[role] || 0; // Get count, default to 0 if role not present
-            if (count > 0) { // Only display roles that are present
+        roleOrder.forEach(roleKey => {
+            const count = roleCounts[roleKey] || 0;
+            if (count > 0) {
                 const roleDiv = document.createElement('div');
-                const imageUrl = `images/roles/${roleImageMap[role]}`;
-                roleDiv.innerHTML = `<label><img src="${imageUrl}" alt="${role}" class="role-icon"><div class="role-name">${role}</div><div class="role-count">x${count}</div></label>`;
+                const imageUrl = `images/roles/${roleImageMap[roleKey]}`;
+                const roleName = t(`roles.${roleKey}`);
+                roleDiv.innerHTML = `<label><img src="${imageUrl}" alt="${roleName}" class="role-icon"><div class="role-name">${roleName}</div><div class="role-count">x${count}</div></label>`;
                 roleSelectionContainer.appendChild(roleDiv);
             }
         });
     }
 
     function getPresetRoles(playerCount) {
-        // 这可以是一个更复杂的配置表
-        if (playerCount === 6) return ['狼人', '狼人', '预言家', '女巫', '平民', '平民'];
-        if (playerCount === 7) return ['狼人', '狼人', '预言家', '女巫', '平民', '平民', '平民'];
-        if (playerCount === 8) return ['狼人', '狼人', '女巫', '预言家', '猎人', '平民', '平民', '平民'];
-        if (playerCount === 9) return ['狼人', '狼人', '狼人', '女巫', '预言家', '猎人', '平民', '平民', '平民'];
-        if (playerCount === 10) return ['狼人', '狼人', '狼人', '女巫', '预言家', '猎人', '平民', '平民', '平民', '平民'];
-        if (playerCount === 11) return ['狼人', '狼人', '狼人', '女巫', '预言家', '猎人', '白痴', '平民', '平民', '平民', '平民'];
-        if (playerCount === 12) return ['狼人', '狼人', '狼人', '狼人', '女巫', '预言家', '猎人', '白痴', '平民', '平民', '平民', '平民'];
-        return []; // 默认
+        // Returns English keys for roles
+        if (playerCount === 6) return ['wolfman', 'wolfman', 'prophet', 'witch', 'villager', 'villager'];
+        if (playerCount === 7) return ['wolfman', 'wolfman', 'prophet', 'witch', 'villager', 'villager', 'villager'];
+        if (playerCount === 8) return ['wolfman', 'wolfman', 'witch', 'prophet', 'hunter', 'villager', 'villager', 'villager'];
+        if (playerCount === 9) return ['wolfman', 'wolfman', 'wolfman', 'witch', 'prophet', 'hunter', 'villager', 'villager', 'villager'];
+        if (playerCount === 10) return ['wolfman', 'wolfman', 'wolfman', 'witch', 'prophet', 'hunter', 'villager', 'villager', 'villager', 'villager'];
+        if (playerCount === 11) return ['wolfman', 'wolfman', 'wolfman', 'witch', 'prophet', 'hunter', 'stupid', 'villager', 'villager', 'villager', 'villager'];
+        if (playerCount === 12) return ['wolfman', 'wolfman', 'wolfman', 'wolfman', 'witch', 'prophet', 'hunter', 'stupid', 'villager', 'villager', 'villager', 'villager'];
+        return [];
     }
 
-    playerCountInput.addEventListener('change', renderRoleSelection);
-
-    // 开始游戏
     startGameButton.addEventListener('click', () => {
-        console.log('Start Game button clicked');
         const playerCount = parseInt(playerCountInput.value);
         const rolesToAssign = getPresetRoles(playerCount);
 
-        console.log('Player Count:', playerCount);
-        console.log('Roles to Assign Length:', rolesToAssign.length);
-
         if (rolesToAssign.length === 0) {
-            showModal(`当前玩家人数 ${playerCount} 不支持，请选择 6-12 之间的玩家人数。`, 'info');
+            showModal('error.unsupportedPlayerCount', null, playerCount);
             return;
         } else if (rolesToAssign.length !== playerCount) {
-            showModal(`当前为${playerCount}人配置的角色数量为 ${rolesToAssign.length}，与玩家人数不匹配，请检查配置。`, 'info');
+            showModal('error.roleMismatch', null, playerCount, rolesToAssign.length);
             return;
         }
 
         initializeGame(playerCount, rolesToAssign);
     });
 
-    const actionControls = document.getElementById('action-controls');
-
-    let gameState = {};
-    let selectedPlayerId = null;
-
-    // 初始化游戏
     function initializeGame(playerCount, selectedRoles) {
         gameSetup.classList.add('hidden');
         gameBoard.classList.remove('hidden');
 
         gameState = assignRoles(playerCount, selectedRoles);
         renderPlayers(gameState.players);
-        log('游戏开始！角色已秘密分配。', 'info');
-        currentPrompt.textContent = '游戏开始！角色已秘密分配。';
-        console.log('Current Prompt set to:', currentPrompt.textContent);
+        log('log.gameStarted');
+        currentPrompt.textContent = t('prompt.gameStarted');
         runGameLoop();
     }
 
-    // 游戏主循环
     function runGameLoop() {
         const { phase, day } = gameState;
         if (phase === 'night') {
-            gamePhaseTitle.textContent = `第 ${day} 天 - 黑夜 🌙`;
+            gamePhaseTitle.textContent = t('gamePhase.night', day);
             gamePhaseTitle.classList.remove('day-phase-bg');
             gamePhaseTitle.classList.add('night-phase-bg');
             handleNightPhase();
         } else if (phase === 'day') {
-            gamePhaseTitle.textContent = `第 ${day} 天 - 白天 ☀️`;
+            gamePhaseTitle.textContent = t('gamePhase.day', day);
             gamePhaseTitle.classList.remove('night-phase-bg');
             gamePhaseTitle.classList.add('day-phase-bg');
             handleDayPhase();
         }
     }
 
-    // 处理白天阶段
     function handleDayPhase() {
-        currentPrompt.textContent = '天亮了，请睁眼。';
-        log('天亮了，请睁眼。', 'info');
+        currentPrompt.textContent = t('prompt.daylight');
+        log('log.daylight');
 
         const afterDeathProcessing = () => {
             if (checkForWinner()) return;
-            log('请玩家发言并准备投票。', 'info');
+            log('log.discussAndVote');
             setupPlayerSelection(player => player.isAlive && !player.isRevealedIdiot, (selectedId) => {
                 handleVote(selectedId);
-            }, '投票淘汰该玩家');
+            }, t('button.voteOut'));
         };
 
-        // 在第一天且警长空缺时处理警长竞选
         if (gameState.day === 1 && !gameState.players.some(p => p.isSheriff)) {
             handleSheriffElection(() => {
                 processPendingDeaths(afterDeathProcessing);
@@ -156,18 +198,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 处理投票结果
     function handleVote(votedId) {
         const player = gameState.players.find(p => p.id === votedId);
         if (player) {
-            log(`${player.id} 号玩家被投票出局，身份是 ${player.role}。`, 'action');
+            log('log.votedOut', 'action', player.id, t(`roles.${player.role}`));
 
-            if (player.role === '白痴') {
+            if (player.role === 'stupid') {
                 player.isRevealedIdiot = true;
-                log('白痴翻牌，保留在场上但失去投票权。', 'info');
+                log('log.idiotRevealed', 'info');
                 if (player.isSheriff) {
                     player.isSheriff = false;
-                    log('白痴警长被投票出局，警徽被撕毁，请在下一个白天重新竞选警长。', 'info');
+                    log('log.idiotSheriffVotedOut', 'info');
                 }
                 renderPlayers(gameState.players);
                 if (checkForWinner()) return;
@@ -178,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
             player.isAlive = false;
             renderPlayers(gameState.players);
 
-            if (player.role === '猎人') {
+            if (player.role === 'hunter') {
                 handleHunterSkill(() => {
                     if (checkForWinner()) return;
                     startNextNight();
@@ -186,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (player.isSheriff) {
                 handleSheriffTransfer(() => {
                     if (checkForWinner()) return;
-                    startNextNext();
+                    startNextNight();
                 });
             } else {
                 if (checkForWinner()) return;
@@ -201,41 +242,32 @@ document.addEventListener('DOMContentLoaded', () => {
         runGameLoop();
     }
 
-    // 处理夜晚阶段
     function handleNightPhase() {
-        currentPrompt.textContent = '黑夜降临，请等待主持人指示。';
+        currentPrompt.textContent = t('prompt.nightfall');
         gameState.victim = null;
         gameState.poisonedTarget = null;
         gameState.pendingDeaths = [];
 
-        const wolves = gameState.players.filter(p => p.role === '狼人' && p.isAlive);
-        const prophet = gameState.players.find(p => p.role === '预言家' && p.isAlive);
-        const witch = gameState.players.find(p => p.role === '女巫' && p.isAlive);
-
-        // 简单的队列来处理行动顺序
         const nightActions = [handleWolvesAction, handleProphetAction, handleWitchAction];
 
-
-        nightActions.push((callback) => {
-            log('黑夜结束。', 'info');
+        nightActions.push(() => {
+            log('log.nightEnd');
 
             if (gameState.poisonedTarget && gameState.poisonedTarget === gameState.victim) {
                 gameState.victim = null;
             }
 
             if (gameState.poisonedTarget) {
-                gameState.pendingDeaths.push({ id: gameState.poisonedTarget, reason: '被毒杀' });
+                gameState.pendingDeaths.push({ id: gameState.poisonedTarget, reason: t('reason.poisoned') });
             }
             if (gameState.victim) {
-                gameState.pendingDeaths.push({ id: gameState.victim, reason: '被狼人淘汰' });
+                gameState.pendingDeaths.push({ id: gameState.victim, reason: t('reason.wolf') });
             }
 
             gameState.phase = 'day';
             runGameLoop();
-            callback();
         });
 
-        // ... (night actions execution) ...
         let currentActionIndex = 0;
         function nextAction() {
             if (currentActionIndex < nightActions.length) {
@@ -254,16 +286,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const player = gameState.players.find(p => p.id === death.id);
             if (player && player.isAlive) {
                 player.isAlive = false;
-                deathAnnouncements.push(`${player.id} 号玩家昨晚因 ${death.reason} 而出局`);
-                if (player.role === '猎人') hunterDied = true;
+                deathAnnouncements.push(t('log.playerDiedLastNight', player.id, death.reason));
+                if (player.role === 'hunter') hunterDied = true;
                 if (player.isSheriff) sheriffDied = true;
             }
         });
 
         if (deathAnnouncements.length === 0) {
-            log('昨晚是平安夜。', 'info');
+            log('log.safeNight', 'info');
         } else {
-            log(deathAnnouncements.join('，') + '。', 'death');
+            log('log.deathAnnouncements', 'death', deathAnnouncements.join(t('misc.joiner')));
         }
 
         renderPlayers(gameState.players);
@@ -287,126 +319,122 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleWolvesAction(callback) {
-        const wolves = gameState.players.filter(p => p.role === '狼人' && p.isAlive);
+        const wolves = gameState.players.filter(p => p.role === 'wolfman' && p.isAlive);
         if (wolves.length === 0) {
-            currentPrompt.textContent = '狼人已全部出局，今晚平安。';
-            log('狼人已全部出局，今晚平安。', 'info');
+            currentPrompt.textContent = t('prompt.wolvesAllOut');
+            log('log.wolvesAllOut', 'info');
             callback();
             return;
         }
-        currentPrompt.textContent = '狼人请睁眼，请选择要淘汰的玩家。';
-        log('狼人请睁眼，请选择要淘汰的玩家。', 'action');
+        currentPrompt.textContent = t('prompt.wolvesAction');
+        log('log.wolvesAction', 'action');
         setupPlayerSelection(player => player.isAlive, (selectedId) => {
             gameState.victim = selectedId;
-            log(`狼人选择了 ${selectedId} 号玩家。`, 'action');
+            log('log.wolvesSelected', 'action', selectedId);
             callback();
         });
     }
 
     function handleProphetAction(callback) {
-        const prophet = gameState.players.find(p => p.role === '预言家' && p.isAlive);
+        const prophet = gameState.players.find(p => p.role === 'prophet' && p.isAlive);
         if (!prophet) {
-            currentPrompt.textContent = '预言家已出局。请主持人假装询问预言家要查验的玩家，然后点击“跳过”按钮。';
-            log('预言家已出局，请跳过此环节。', 'info');
+            currentPrompt.textContent = t('prompt.prophetIsOut');
+            log('log.prophetIsOut', 'info');
             clearActionControls();
             const skipButton = document.createElement('button');
-            skipButton.textContent = '跳过';
+            skipButton.textContent = t('button.skip');
             skipButton.onclick = () => callback();
             actionControls.appendChild(skipButton);
             return;
         }
-        currentPrompt.textContent = '预言家请睁眼，请选择要查验的玩家。';
-        log('预言家请睁眼，请选择要查验的玩家。', 'action');
+        currentPrompt.textContent = t('prompt.prophetAction');
+        log('log.prophetAction', 'action');
         setupPlayerSelection(player => player.isAlive, (selectedId) => {
             const targetPlayer = gameState.players.find(p => p.id === selectedId);
-            const isWolf = targetPlayer.role === '狼人';
-            showModal(`查验结果：${selectedId} 号玩家是 ${isWolf ? '狼人' : '好人'}。`, () => {
-                log(`预言家查验了 ${selectedId} 号玩家。`, 'action');
+            const isWolf = targetPlayer.role === 'wolfman';
+            const result = isWolf ? t('misc.wolf') : t('misc.good');
+            showModal('modal.prophetResult', () => {
+                log('log.prophetChecked', 'action', selectedId);
                 callback();
-            });
+            }, selectedId, result);
         });
     }
 
     function handleWitchAction(callback) {
-        const witch = gameState.players.find(p => p.role === '女巫' && p.isAlive);
+        const witch = gameState.players.find(p => p.role === 'witch' && p.isAlive);
         if (!witch) {
-            currentPrompt.textContent = '女巫已出局。';
-            log('女巫已出局。', 'info');
+            currentPrompt.textContent = t('prompt.witchIsOut');
+            log('log.witchIsOut', 'info');
             callback();
             return;
         }
 
-        currentPrompt.textContent = '女巫请睁眼。';
-        log('女巫请睁眼。', 'action');
+        currentPrompt.textContent = t('prompt.witchAction');
+        log('log.witchAction', 'action');
         if (gameState.victim) {
-            log(`昨晚 ${gameState.victim} 号玩家倒牌了。`, 'info');
+            log('log.witchVictimInfo', 'info', gameState.victim);
         }
         clearActionControls();
 
         const doPoisonPhase = () => {
-            clearActionControls(); // Clear save/skip buttons
+            clearActionControls();
 
             const poisonButton = document.createElement('button');
-            poisonButton.textContent = '使用毒药';
+            poisonButton.textContent = t('button.usePoison');
             if (gameState.witchUsedPoison) {
                 poisonButton.classList.add('disabled-button');
                 poisonButton.disabled = true;
-                poisonButton.onclick = () => showModal('毒药已用。', () => {});
+                poisonButton.onclick = () => showModal('modal.poisonUsed');
             } else {
                 poisonButton.onclick = () => {
                     setupPlayerSelection(p => p.isAlive, (poisonedId) => {
                         gameState.poisonedTarget = poisonedId;
                         gameState.witchUsedPoison = true;
-                        log(`女巫使用了毒药，选择了 ${poisonedId} 号玩家。`, 'action');
-                        callback(); // Complete witch's turn
-                    }, '选择下毒目标');
+                        log('log.witchUsedPoison', 'action', poisonedId);
+                        callback();
+                    }, t('button.selectPoisonTarget'));
                 };
             }
             actionControls.appendChild(poisonButton);
 
             const skipPoisonButton = document.createElement('button');
-            skipPoisonButton.textContent = '跳过';
-            skipPoisonButton.onclick = () => callback(); // Skip poison, complete witch's turn
+            skipPoisonButton.textContent = t('button.skip');
+            skipPoisonButton.onclick = () => callback();
             actionControls.appendChild(skipPoisonButton);
         };
 
-        // Save phase
         const saveButton = document.createElement('button');
-        saveButton.textContent = '使用解药';
-        const witchPlayer = gameState.players.find(p => p.role === '女巫'); // Get witch player object
-        const isWitchVictim = gameState.victim === witchPlayer.id; // Check if witch is the victim
+        saveButton.textContent = t('button.useAntidote');
+        const witchPlayer = gameState.players.find(p => p.role === 'witch');
+        const isWitchVictim = gameState.victim === witchPlayer.id;
 
         if (!gameState.victim || gameState.witchUsedSave || isWitchVictim) {
             saveButton.classList.add('disabled-button');
             saveButton.disabled = true;
             saveButton.onclick = () => {
-                if (!gameState.victim) {
-                    showModal('昨晚是平安夜，无人倒牌。', () => {});
-                } else if (gameState.witchUsedSave) {
-                    showModal('解药已用。', () => {});
-                } else if (isWitchVictim) {
-                    showModal('女巫不能自救。', () => {});
-                }
+                if (!gameState.victim) showModal('modal.noVictim');
+                else if (gameState.witchUsedSave) showModal('modal.antidoteUsed');
+                else if (isWitchVictim) showModal('modal.witchCannotSaveSelf');
             };
         } else {
             saveButton.onclick = () => {
-                log(`女巫使用了灵药，救了 ${gameState.victim} 号玩家。`, 'action');
-                gameState.victim = null; // Saved
+                log('log.witchUsedAntidote', 'action', gameState.victim);
+                gameState.victim = null;
                 gameState.witchUsedSave = true;
-                doPoisonPhase(); // Proceed to poison phase
+                doPoisonPhase();
             };
         }
         actionControls.appendChild(saveButton);
 
         const skipSaveButton = document.createElement('button');
-        skipSaveButton.textContent = '跳过';
-        skipSaveButton.onclick = () => doPoisonPhase(); // Skip save, proceed to poison phase
+        skipSaveButton.textContent = t('button.skip');
+        skipSaveButton.onclick = () => doPoisonPhase();
         actionControls.appendChild(skipSaveButton);
     }
 
     function handleSheriffTransfer(callback) {
-        currentPrompt.textContent = '警长已死亡。请主持人选择一名玩家移交警徽，或撕毁警徽。';
-        log('警长已死亡。请主持人选择一名玩家移交警徽，然后点击“确认移交”；或者点击“撕毁警徽”。', 'action');
+        currentPrompt.textContent = t('prompt.sheriffDied');
+        log('log.sheriffDied', 'action');
         clearActionControls();
 
         setupPlayerSelection(p => p.isAlive, (newSheriffId) => {
@@ -415,17 +443,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const newSheriff = gameState.players.find(p => p.id === newSheriffId);
             newSheriff.isSheriff = true;
-            log(`警徽已移交给 ${newSheriffId} 号玩家。`, 'action');
+            log('log.sheriffTransferred', 'action', newSheriffId);
             renderPlayers(gameState.players);
             callback();
-        }, '确认移交');
+        }, t('button.confirmTransfer'));
 
         const tearUpButton = document.createElement('button');
-        tearUpButton.textContent = '撕毁警徽';
+        tearUpButton.textContent = t('button.tearUpBadge');
         tearUpButton.onclick = () => {
             const oldSheriff = gameState.players.find(p => p.isSheriff);
             if (oldSheriff) oldSheriff.isSheriff = false;
-            log('警徽已被撕毁。', 'action');
+            log('log.badgeTornUp', 'action');
             renderPlayers(gameState.players);
             clearActionControls();
             callback();
@@ -434,8 +462,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleSheriffElection(callback) {
-        currentPrompt.textContent = '请进行警长竞选。请选择所有参与竞选的玩家。';
-        log('请进行警长竞选。请选择所有参与竞选的玩家。', 'action');
+        currentPrompt.textContent = t('prompt.sheriffElection');
+        log('log.sheriffElection', 'action');
         let candidates = [];
         clearActionControls();
 
@@ -456,13 +484,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const confirmCandidatesButton = document.createElement('button');
-        confirmCandidatesButton.textContent = '确认候选人';
+        confirmCandidatesButton.textContent = t('button.confirmCandidates');
         confirmCandidatesButton.onclick = () => {
             if (candidates.length === 0) {
-                showModal('请至少选择一名候选人。', 'info');
+                showModal('modal.selectOneCandidate');
                 return;
             }
-            log(`警长候选人是: ${candidates.join(', ')} 号。`, 'info');
+            log('log.sheriffCandidates', 'info', candidates.join(', '));
             clearPlayerSelection();
             setupSheriffVoting(candidates, callback);
         };
@@ -474,14 +502,14 @@ document.addEventListener('DOMContentLoaded', () => {
         sheriffCandidatesList.innerHTML = '';
         let votes = {};
 
-        candidates.sort((a, b) => a - b); // 确保顺序
+        candidates.sort((a, b) => a - b);
 
         candidates.forEach(candidateId => {
             votes[candidateId] = 0;
             const candidateDiv = document.createElement('div');
             candidateDiv.className = 'candidate-vote-control';
             candidateDiv.innerHTML = `
-                <span>玩家 ${candidateId}</span>
+                <span>${t('misc.player')} ${candidateId}</span>
                 <button class="vote-minus" data-id="${candidateId}">-</button>
                 <span class="vote-count" data-id="${candidateId}">0</span>
                 <button class="vote-plus" data-id="${candidateId}">+</button>
@@ -489,21 +517,15 @@ document.addEventListener('DOMContentLoaded', () => {
             sheriffCandidatesList.appendChild(candidateDiv);
         });
 
-        sheriffCandidatesList.querySelectorAll('.vote-plus').forEach(button => {
+        sheriffCandidatesList.querySelectorAll('.vote-plus, .vote-minus').forEach(button => {
             button.onclick = (e) => {
                 const id = parseInt(e.target.dataset.id);
-                votes[id]++;
-                e.target.previousElementSibling.textContent = votes[id];
-            };
-        });
-
-        sheriffCandidatesList.querySelectorAll('.vote-minus').forEach(button => {
-            button.onclick = (e) => {
-                const id = parseInt(e.target.dataset.id);
-                if (votes[id] > 0) {
+                if (e.target.classList.contains('vote-plus')) {
+                    votes[id]++;
+                } else if (votes[id] > 0) {
                     votes[id]--;
-                    e.target.nextElementSibling.textContent = votes[id];
                 }
+                e.target.parentElement.querySelector('.vote-count').textContent = votes[id];
             };
         });
 
@@ -525,63 +547,34 @@ document.addEventListener('DOMContentLoaded', () => {
             if (electedSheriffId !== -1 && !tie) {
                 const sheriff = gameState.players.find(p => p.id === electedSheriffId);
                 sheriff.isSheriff = true;
-                log(`${sheriff.id} 号玩家当选为警长！`, 'action');
+                log('log.sheriffElected', 'action', sheriff.id);
                 renderPlayers(gameState.players);
                 sheriffVoteArea.classList.add('hidden');
                 callback();
             } else if (tie) {
-                showModal('警长投票出现平票，请重新投票或协商。', 'info');
+                showModal('modal.tieVote');
             } else {
-                showModal('没有选出警长，请重新投票。', 'info');
+                showModal('modal.noSheriffElected');
             }
         };
     }
 
-    function voteForSheriff(candidates, callback) { // 这个函数现在是多余的，会被setupSheriffVoting取代
-        // 确保候选人按ID顺序排序，以便询问票数时顺序一致
-        candidates.sort((a, b) => a - b);
-        candidates.forEach(c => votes[c] = 0);
-
-        // 简化处理：直接弹出prompt收集票数
-        candidates.forEach(candidateId => {
-            const voteCount = prompt(`请输入 ${candidateId} 号候选人的票数:`, "0");
-            votes[candidateId] = parseInt(voteCount) || 0;
-        });
-
-        let maxVotes = -1;
-        let electedSheriffId = -1;
-        for (const candidateId in votes) {
-            if (votes[candidateId] > maxVotes) {
-                maxVotes = votes[candidateId];
-                electedSheriffId = parseInt(candidateId);
-            }
-        }
-
-        if (electedSheriffId !== -1) {
-            const sheriff = gameState.players.find(p => p.id === electedSheriffId);
-            sheriff.isSheriff = true;
-            log(`${sheriff.id} 号玩家当选为警长！`, 'action');
-            renderPlayers(gameState.players);
-        }
-        callback();
-    }
-
     function handleHunterSkill(callback) {
-        const hunter = gameState.players.find(p => p.role === '猎人' && !p.isAlive); // Find the dead hunter
-        const isPoisoned = gameState.pendingDeaths.some(death => death.id === hunter.id && death.reason === '被毒杀');
+        const hunter = gameState.players.find(p => p.role === 'hunter' && !p.isAlive);
+        const isPoisoned = gameState.pendingDeaths.some(death => death.id === hunter.id && death.reason === t('reason.poisoned'));
 
         if (isPoisoned) {
-            log('猎人被毒死，无法开枪。', 'info');
+            log('log.hunterPoisoned', 'info');
             callback();
             return;
         }
 
-        log('猎人被淘汰，请选择一名玩家开枪带走。', 'action');
+        log('log.hunterAction', 'action');
         setupPlayerSelection(p => p.isAlive, (shotId) => {
             const shotPlayer = gameState.players.find(p => p.id === shotId);
             if (shotPlayer) {
                 shotPlayer.isAlive = false;
-                log(`猎人开枪带走了 ${shotPlayer.id} 号玩家。`, 'action');
+                log('log.hunterShot', 'action', shotPlayer.id);
                 renderPlayers(gameState.players);
 
                 if (shotPlayer.isSheriff) {
@@ -592,11 +585,10 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 callback();
             }
-        }, '确认开枪');
+        }, t('button.confirmShot'));
     }
 
-    // 设置玩家选择
-    function setupPlayerSelection(filterFunc, onConfirm, buttonText = '确认选择') {
+    function setupPlayerSelection(filterFunc, onConfirm, buttonText) {
         clearActionControls();
         selectedPlayerId = null;
 
@@ -614,7 +606,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const confirmButton = document.createElement('button');
-        confirmButton.textContent = buttonText;
+        confirmButton.textContent = buttonText || t('button.confirmSelection');
         confirmButton.onclick = () => {
             if (selectedPlayerId) {
                 const confirmedId = selectedPlayerId;
@@ -622,7 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearActionControls();
                 onConfirm(confirmedId);
             } else {
-                showModal('请选择一个玩家。', 'info');
+                showModal('modal.selectPlayer');
             }
         };
         actionControls.appendChild(confirmButton);
@@ -652,77 +644,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function checkForWinner() {
         const alivePlayers = gameState.players.filter(p => p.isAlive);
-        const aliveWolves = alivePlayers.filter(p => p.role === '狼人');
-        const aliveGods = alivePlayers.filter(p => ['预言家', '女巫', '猎人', '白痴'].includes(p.role));
-        const aliveVillagers = alivePlayers.filter(p => p.role === '平民');
-
-        let totalGoodVotes = 0;
-        alivePlayers.forEach(player => {
-            if (player.role !== '狼人') { // 好人阵营
-                if (player.isSheriff) {
-                    totalGoodVotes += 1.5; // 警长1.5票
-                } else {
-                    totalGoodVotes += 1; // 普通玩家1票
-                }
-            }
-        });
+        const aliveWolves = alivePlayers.filter(p => p.role === 'wolfman');
+        const aliveGods = alivePlayers.filter(p => ['prophet', 'witch', 'hunter', 'stupid'].includes(p.role));
+        const aliveVillagers = alivePlayers.filter(p => p.role === 'villager');
 
         let winner = null;
-        let reason = '';
+        let reasonKey = '';
 
-        // 好人阵营胜利条件：所有狼人出局
         if (aliveWolves.length === 0) {
-            winner = '好人阵营';
-            reason = '所有狼人已被淘汰';
-        }
-        // 狼人阵营胜利条件：
-        // 1. 狼人数量达到或超过好人有效票数
-        // 2. 所有平民出局 (屠边)
-        // 3. 所有神职出局 (屠边)
-        else if (aliveWolves.length >= totalGoodVotes) {
-            winner = '狼人阵营';
-            reason = '狼人数量已达到或超过好人数量';
+            winner = t('winner.good');
+            reasonKey = 'reason.allWolvesEliminated';
         } else if (aliveVillagers.length === 0) {
-            winner = '狼人阵营';
-            reason = '所有平民已被淘汰';
+            winner = t('winner.werewolves');
+            reasonKey = 'reason.allVillagersEliminated';
         } else if (aliveGods.length === 0) {
-            winner = '狼人阵营';
-            reason = '所有神职已被淘汰';
+            winner = t('winner.werewolves');
+            reasonKey = 'reason.allGodsEliminated';
         }
 
         if (winner) {
-            const victoryMessage = `游戏结束，${reason}，${winner}胜利！`;
-            gamePhaseTitle.textContent = `${winner}胜利！`;
-            log(victoryMessage, 'info');
-            showModal(victoryMessage);
+            const reason = t(reasonKey);
+            const victoryMessage = t('log.gameOver', reason, winner);
+            gamePhaseTitle.textContent = t('gamePhase.gameOver', winner);
+            log('log.gameOverLog', 'info', reason, winner);
+            showModal('modal.gameOver', null, reason, winner);
             clearActionControls();
-            // 禁用所有未来的操作
             gameState.phase = 'gameover';
             return true;
         }
         return false;
     }
 
-    // 分配角色
     function assignRoles(playerCount, rolesToAssign) {
-        // 打乱角色数组
         const shuffledRoles = rolesToAssign.sort(() => Math.random() - 0.5);
-
         const players = [];
         for (let i = 1; i <= playerCount; i++) {
             players.push({
                 id: i,
-                role: shuffledRoles[i - 1],
+                role: shuffledRoles[i - 1], // role is the English key
                 isAlive: true,
                 isSheriff: false,
                 isRevealedIdiot: false,
             });
         }
-
         return {
             players,
             day: 1,
-            phase: 'night', // or 'day'
+            phase: 'night',
             witchUsedSave: false,
             witchUsedPoison: false,
             victim: null,
@@ -731,47 +699,29 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // 渲染玩家列表
     function renderPlayers(players) {
         playerList.innerHTML = '';
         players.forEach(player => {
             const playerCard = document.createElement('div');
             playerCard.className = 'player-card';
             playerCard.dataset.playerId = player.id;
-            if (!player.isAlive) {
-                playerCard.classList.add('dead');
-            }
-            if (player.isRevealedIdiot) {
-                playerCard.classList.add('revealed-idiot');
-            }
-            if (player.isSheriff) {
-                playerCard.classList.add('sheriff');
+            if (!player.isAlive) playerCard.classList.add('dead');
+            if (player.isRevealedIdiot) playerCard.classList.add('revealed-idiot');
+            if (player.isSheriff) playerCard.classList.add('sheriff');
+
+            const civilianRoles = ['villager'];
+            const godRoles = ['prophet', 'witch', 'hunter', 'stupid'];
+            if (civilianRoles.includes(player.role)) playerCard.classList.add('civilian-alignment');
+            else if (godRoles.includes(player.role)) playerCard.classList.add('god-alignment');
+            else if (player.role === 'wolfman') playerCard.classList.add('wolf-alignment');
+
+            let roleDisplay = t(`roles.${player.role}`);
+            const roleIcons = { prophet: '🔮', witch: '🧙', hunter: '🏹', stupid: '🃏' };
+            if (roleIcons[player.role]) {
+                roleDisplay += ` ${roleIcons[player.role]}`;
             }
 
-            // Add alignment class
-            const civilianRoles = ['平民'];
-            const godRoles = ['预言家', '女巫', '猎人', '白痴'];
-
-            if (civilianRoles.includes(player.role)) {
-                playerCard.classList.add('civilian-alignment');
-            } else if (godRoles.includes(player.role)) {
-                playerCard.classList.add('god-alignment');
-            } else if (player.role === '狼人') {
-                playerCard.classList.add('wolf-alignment');
-            }
-
-            let roleDisplay = player.role;
-            if (player.role === '预言家') {
-                roleDisplay += ' 🔮';
-            } else if (player.role === '女巫') {
-                roleDisplay += ' 🧙';
-            } else if (player.role === '猎人') {
-                roleDisplay += ' 🏹';
-            } else if (player.role === '白痴') {
-                roleDisplay += ' 🃏';
-            }
-
-            playerCard.innerHTML = `<h3>玩家 ${player.id}</h3><div class="role">${roleDisplay}</div>`;
+            playerCard.innerHTML = `<h3>${t('misc.player')} ${player.id}</h3><div class="role">${roleDisplay}</div>`;
 
             if (player.isSheriff) {
                 const sheriffBadge = document.createElement('span');
@@ -784,24 +734,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 记录日志
-    function log(message, type = 'info') {
+    function log(key, type = 'info', ...args) {
         const li = document.createElement('li');
         const now = new Date();
         const timestamp = `[${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}]`;
-        li.textContent = `${timestamp} ${message}`;
+        li.textContent = `${timestamp} ${t(key, ...args)}`;
         li.classList.add(`log-${type}`);
         logList.prepend(li);
-        logList.scrollTop = logList.scrollHeight; // 自动滚动到底部
+        logList.scrollTop = 0;
     }
 
-    // 重置游戏
     resetGameButton.addEventListener('click', () => {
         gameBoard.classList.add('hidden');
         gameSetup.classList.remove('hidden');
         logList.innerHTML = '';
+        gameState = {};
+        updateUI(); // Re-render setup screen in current language
     });
 
-    // 初始化
-    renderRoleSelection();
+    // --- Init ---
+    playerCountInput.addEventListener('change', renderRoleSelection);
+    langZhButton.addEventListener('click', () => setLanguage('zh-CN'));
+    langEnButton.addEventListener('click', () => setLanguage('en-US'));
+
+    async function init() {
+        const preferredLang = localStorage.getItem('preferredLang');
+        const browserLang = navigator.language.startsWith('en') ? 'en-US' : 'zh-CN';
+        await setLanguage(preferredLang || browserLang);
+    }
+
+    init();
 });

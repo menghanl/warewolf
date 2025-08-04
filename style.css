@@ -484,3 +484,25 @@ button.disabled-button:hover {
     width: auto;
     padding: 10px 30px;
 }
+
+/* Language Switcher */
+.language-switcher {
+    text-align: right;
+    margin-bottom: 10px;
+}
+
+.language-switcher button {
+    background: none;
+    border: 1px solid #ccc;
+    color: #333;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-left: 5px;
+}
+
+.language-switcher button.active {
+    background-color: #3498db;
+    color: #fff;
+    border-color: #3498db;
+}

@@ -1,0 +1,119 @@
+
+{
+  "appTitle": "Werewolf Helper",
+  "playerCountLabel": "Players:",
+  "playerCountHint": "(6-12 players supported)",
+  "roleSelectionLabel": "Select Roles:",
+  "startGameButton": "Start Game",
+  "gameInProgress": "Game in Progress",
+  "sheriffVoteTitle": "Sheriff Vote",
+  "confirmSheriffVoteButton": "Confirm Vote",
+  "gameLogTitle": "Game Log",
+  "resetGameButton": "Reset Game",
+  "modalCloseButton": "OK",
+  "language": "Language",
+  "roles": {
+    "villager": "Villager",
+    "prophet": "Seer",
+    "witch": "Witch",
+    "hunter": "Hunter",
+    "stupid": "Idiot",
+    "wolfman": "Werewolf"
+  },
+  "error": {
+    "unsupportedPlayerCount": "Player count {0} is not supported. Please choose between 6-12 players.",
+    "roleMismatch": "The number of roles ({1}) does not match the number of players ({0}). Please check the configuration."
+  },
+  "prompt": {
+    "gameStarted": "Game started! Roles have been secretly assigned.",
+    "daylight": "Daylight is here. Everyone, open your eyes.",
+    "nightfall": "Night falls. Please await the moderator's instructions.",
+    "wolvesAction": "Werewolves, open your eyes. Please select a player to eliminate.",
+    "wolvesAllOut": "All werewolves are out. It's a peaceful night.",
+    "prophetAction": "Seer, open your eyes. Please select a player to check.",
+    "prophetIsOut": "The Seer is out. Moderator, please pretend to ask the Seer and then click 'Skip'.",
+    "witchAction": "Witch, open your eyes.",
+    "witchIsOut": "The Witch is out.",
+    "sheriffDied": "The Sheriff has died. Please choose a player to pass the badge to, or tear it up.",
+    "sheriffElection": "Time for the Sheriff election. Please select all candidates."
+  },
+  "log": {
+    "gameStarted": "Game started! Roles have been secretly assigned.",
+    "daylight": "Daylight is here. Everyone, open your eyes.",
+    "discussAndVote": "Please discuss and prepare to vote.",
+    "votedOut": "Player {0} was voted out. Their role was {1}.",
+    "idiotRevealed": "The Idiot is revealed, stays in the game but loses voting rights.",
+    "idiotSheriffVotedOut": "The Idiot Sheriff was voted out, the badge is torn up. A new election will be held next day.",
+    "nightEnd": "The night is over.",
+    "safeNight": "It was a peaceful night.",
+    "deathAnnouncements": "{0}.",
+    "playerDiedLastNight": "Player {0} was eliminated last night due to {1}",
+    "wolvesAction": "Werewolves, open your eyes. Please select a player to eliminate.",
+    "wolvesSelected": "The werewolves have selected Player {0}.",
+    "wolvesAllOut": "All werewolves are out. It's a peaceful night.",
+    "prophetAction": "Seer, open your eyes. Please select a player to check.",
+    "prophetChecked": "The Seer checked Player {0}.",
+    "prophetIsOut": "The Seer is out. Please skip this step.",
+    "witchAction": "Witch, open your eyes.",
+    "witchVictimInfo": "Player {0} was targeted last night.",
+    "witchIsOut": "The Witch is out.",
+    "witchUsedPoison": "The Witch used poison on Player {0}.",
+    "witchUsedAntidote": "The Witch used the antidote to save Player {0}.",
+    "sheriffDied": "The Sheriff has died. Please choose a player to pass the badge to, or click 'Tear Up Badge'.",
+    "sheriffTransferred": "The badge has been transferred to Player {0}.",
+    "badgeTornUp": "The Sheriff's badge has been torn up.",
+    "sheriffElection": "Time for the Sheriff election. Please select all candidates.",
+    "sheriffCandidates": "The candidates for Sheriff are: {0}.",
+    "sheriffElected": "Player {0} has been elected Sheriff!",
+    "hunterPoisoned": "The Hunter was poisoned and cannot use their ability.",
+    "hunterAction": "The Hunter has been eliminated. Please choose a player to take with them.",
+    "hunterShot": "The Hunter shot Player {0}.",
+    "gameOverLog": "Game Over. {0}. {1} win!"
+  },
+  "modal": {
+    "prophetResult": "Check result: Player {0} is a {1}.",
+    "poisonUsed": "Poison has already been used.",
+    "noVictim": "It was a peaceful night, no one was targeted.",
+    "antidoteUsed": "Antidote has already been used.",
+    "witchCannotSaveSelf": "The Witch cannot save herself.",
+    "selectOneCandidate": "Please select at least one candidate.",
+    "tieVote": "There was a tie in the Sheriff vote. Please re-vote or discuss.",
+    "noSheriffElected": "No Sheriff was elected. Please vote again.",
+    "selectPlayer": "Please select a player.",
+    "gameOver": "Game Over. {0}. {1} win!"
+  },
+  "button": {
+    "voteOut": "Vote Out This Player",
+    "skip": "Skip",
+    "usePoison": "Use Poison",
+    "selectPoisonTarget": "Select Target for Poison",
+    "useAntidote": "Use Antidote",
+    "confirmTransfer": "Confirm Transfer",
+    "tearUpBadge": "Tear Up Badge",
+    "confirmCandidates": "Confirm Candidates",
+    "confirmShot": "Confirm Shot",
+    "confirmSelection": "Confirm Selection"
+  },
+  "reason": {
+    "poisoned": "poison",
+    "wolf": "werewolf attack",
+    "allWolvesEliminated": "All werewolves have been eliminated",
+    "allVillagersEliminated": "All villagers have been eliminated",
+    "allGodsEliminated": "All gods have been eliminated"
+  },
+  "winner": {
+    "good": "Good Team",
+    "werewolves": "Werewolf Team"
+  },
+  "misc": {
+    "player": "Player",
+    "joiner": ", ",
+    "wolf": "Werewolf",
+    "good": "Good Person"
+  },
+  "gamePhase": {
+    "night": "Day {0} - Night 🌙",
+    "day": "Day {0} - Day ☀️",
+    "gameOver": "{0} Win!"
+  }
+}
