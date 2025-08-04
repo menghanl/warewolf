@@ -47,7 +47,7 @@
     "nightEnd": "The night is over.",
     "safeNight": "It was a peaceful night.",
     "deathAnnouncements": "{0}.",
-    "playerDiedLastNight": "Player {0} was eliminated last night due to {1}",
+    "playerDiedLastNight": "Player {0} was eliminated last night due to {1}",,
     "wolvesAction": "Werewolves, open your eyes. Please select a player to eliminate.",
     "wolvesSelected": "The werewolves have selected Player {0}.",
     "wolvesAllOut": "All werewolves are out. It's a peaceful night.",

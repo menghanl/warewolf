@@ -47,7 +47,7 @@
     "nightEnd": "黑夜结束。",
     "safeNight": "昨晚是平安夜。",
     "deathAnnouncements": "{0}。",
-    "playerDiedLastNight": "{0} 号玩家昨晚因 {1} 而出局",
+    "playerDiedLastNight": "{0} 号玩家昨晚因 {1} 而出局",,
     "wolvesAction": "狼人请睁眼，请选择要淘汰的玩家。",
     "wolvesSelected": "狼人选择了 {0} 号玩家。",
     "wolvesAllOut": "狼人已全部出局，今晚平安。",
